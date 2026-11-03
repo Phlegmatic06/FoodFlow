@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "created_at": "2026-11-03T11:04:25.572339+00:00",
+  "last_updated": "2026-11-03T11:04:25.572525+00:00",
+  "datasets": {
+    "usda": {
+      "dataset_id": "usda_fdc",
+      "display_name": "USDA FoodData Central (FDC)",
+      "official_source_url": "https://fdc.nal.usda.gov/download-datasets/",
+      "target_schema": "profile_nutrition",
+      "license_notes": "Public Domain (CC0 1.0 Universal) - U.S. Government Work",
+      "reference_citation": "U.S. Department of Agriculture, Agricultural Research Service. FoodData Central.",
+      "expected_files": [
+        "food.csv",
+        "nutrient.csv",
+        "food_nutrient.csv",
+        "food_portion.csv"
+      ],
+      "source_version": "SR Legacy & Foundation Foods",
+      "download_date": null,
+      "import_status": "not_downloaded",
+      "files": {},
+      "imported_row_counts": {},
+      "last_successful_ingestion": null,
+      "failure_record": null,
+      "collections": {
+        "foundation": {
+          "collection_id": "foundation",
+          "display_name": "USDA Foundation Foods",
+          "release_date": "October 2026",
+          "source_url": "https://fdc.nal.usda.gov/download-datasets/",
+          "download_date": null,
+          "import_status": "not_downloaded",
+          "files": {},
+          "imported_row_counts": {},
+          "rejected_counts": {},
+          "last_successful_ingestion": null,
+          "failure_record": null
+        },
+        "sr_legacy": {
+          "collection_id": "sr_legacy",
+          "display_name": "USDA SR Legacy",
+          "release_date": "April 2018",
+          "source_url": "https://fdc.nal.usda.gov/download-datasets/",
+          "download_date": null,
+          "import_status": "not_downloaded",
+          "files": {},
+          "imported_row_counts": {},
+          "rejected_counts": {},
+          "last_successful_ingestion": null,
+          "failure_record": null
+        }
+      },
+      "notes": "Powers profile_nutrition nutritional reference dictionary per 100g."
+    },
+    "foodcom": {
+      "dataset_id": "food_com",
+      "display_name": "Food.com Recipes and Interactions",
+      "official_source_url": "https://berd-platform.de/records/0455w-b0633",
+      "target_schema": "recipe_catalog",
+      "license_notes": "Non-commercial academic research and educational evaluation",
+      "reference_citation": "Majumder, B. P., Li, S., Ni, J., & McAuley, J. (2019). Generating Personalized Recipes from Historical User Preferences. EMNLP.",
+      "expected_files": [
+        "RAW_recipes.csv",
+        "RAW_interactions.csv"
+      ],
+      "source_version": "Kaggle/BERD 2019 Snapshot",
+      "download_date": null,
+      "import_status": "not_downloaded",
+      "files": {},
+      "imported_row_counts": {},
+      "last_successful_ingestion": null,
+      "failure_record": null,
+      "collections": {},
+      "notes": "Provides rich metadata, 7-element %DV nutrition, tags, and user ratings."
+    },
+    "recipenlg": {
+      "dataset_id": "recipenlg",
+      "display_name": "RecipeNLG Large Scale Recipe Corpus",
+      "official_source_url": "https://recipenlg.cs.put.poznan.pl/dataset",
+      "target_schema": "recipe_catalog",
+      "license_notes": "Non-commercial research and educational usage agreement",
+      "reference_citation": "Bień, M., Gilski, M., Maciejewska, M., Taisner, W., Wisniewski, D., & Lawrynowicz, A. (2020). RecipeNLG: A Large Scale Dataset for Recipe Generation and Evaluation.",
+      "expected_files": [
+        "full_dataset.csv"
+      ],
+      "source_version": "1.0.0",
+      "download_date": null,
+      "import_status": "not_downloaded",
+      "files": {},
+      "imported_row_counts": {},
+      "last_successful_ingestion": null,
+      "failure_record": null,
+      "collections": {},
+      "notes": "High-volume corpus (~2.23M recipes) with pre-extracted NER ingredient tokens."
+    }
+  }
+}

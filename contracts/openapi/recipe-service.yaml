@@ -1,0 +1,854 @@
+openapi: 3.1.0
+info:
+  title: FoodFlow Recipe & Ingredient Service API
+  description: >-
+    Member 2 Service (Port 8002). Manages the unified recipe catalogue (Food.com and RecipeNLG),
+    full-text and faceted search, recipe details, ingredient taxonomy and normalization,
+    and bulk recipe lookups for internal orchestration. Operates entirely without user registration.
+  version: 0.1.0
+  contact:
+    name: FoodFlow Architecture Team
+    url: https://github.com/FoodFlow/foodflow
+
+servers:
+  - url: http://localhost:8002
+    description: Local development environment (direct service port)
+  - url: http://recipe-service:8002
+    description: Internal container network address (foodflow-net)
+
+tags:
+  - name: System
+    description: Service health and readiness probes
+  - name: Recipe Discovery
+    description: Public-facing recipe catalogue browsing, faceted search, and full details
+  - name: Ingredient Taxonomy
+    description: Ingredient normalization, autocomplete suggestions, and canonical mapping
+  - name: Internal Services
+    description: High-throughput batch and candidate matching endpoints for Service 3 (Planner)
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags:
+        - System
+      summary: Service health check
+      description: Returns service runtime status, name, and version.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                service: recipe-ingredient
+                version: 0.1.0
+
+  /api/v1/recipes/search:
+    get:
+      operationId: searchRecipes
+      tags:
+        - Recipe Discovery
+      summary: Search and filter recipe catalogue
+      description: >-
+        Full-text search powered by PostgreSQL tsvector over titles, descriptions, and tags.
+        Supports faceted filtering by cuisine, dietary tags, total time, and dataset source.
+        All metadata fields from RecipeNLG that are unavailable remain strictly nullable.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Free-text search terms
+          schema:
+            type: string
+          example: roasted chicken
+        - name: cuisine
+          in: query
+          required: false
+          description: Filter by cuisine name
+          schema:
+            type: string
+          example: Italian
+        - name: tag
+          in: query
+          required: false
+          description: Filter by specific recipe tag
+          schema:
+            type: string
+          example: high-protein
+        - name: diet
+          in: query
+          required: false
+          description: Filter by dietary category tag (e.g., vegetarian, vegan, gluten-free)
+          schema:
+            type: string
+          example: vegetarian
+        - name: max_time
+          in: query
+          required: false
+          description: Maximum total preparation and cooking time in minutes
+          schema:
+            type: integer
+            minimum: 1
+          example: 45
+        - name: source_dataset
+          in: query
+          required: false
+          description: Filter by original dataset corpus
+          schema:
+            type: string
+            enum: [food_com, recipenlg]
+          example: food_com
+        - name: sort
+          in: query
+          required: false
+          description: Ordering criteria for results
+          schema:
+            type: string
+            enum: [relevance, rating, time_asc, time_desc]
+            default: relevance
+          example: relevance
+        - name: page
+          in: query
+          required: false
+          description: 1-indexed page number
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Items per page (max 48)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+            default: 24
+          example: 24
+      responses:
+        '200':
+          description: Paginated collection of recipe summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecipeSummary'
+        '400':
+          description: Invalid filter or pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/recipes/{recipe_id}:
+    get:
+      operationId: getRecipeDetail
+      tags:
+        - Recipe Discovery
+      summary: Retrieve complete recipe details
+      description: >-
+        Returns complete recipe record including ordered ingredient items with raw strings,
+        ordered cooking steps, tags, ratings, and raw dataset nutrition values when present.
+        Unrated recipes have rating_average as null and rating_count as 0.
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          description: Unified global recipe identifier (e.g., rcp_foodcom_5421)
+          schema:
+            type: string
+            pattern: '^rcp_(foodcom|nlg)_[a-zA-Z0-9_-]+$'
+          example: rcp_foodcom_5421
+      responses:
+        '200':
+          description: Complete recipe detail representation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeDetail'
+        '404':
+          description: Recipe not found in catalogue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: RESOURCE_NOT_FOUND
+                  message: "Recipe 'rcp_foodcom_999999' was not found"
+                  details: []
+                  request_id: "7048a1b2-13c5-4dc2-8ae3-9df1a012a611"
+
+  /api/v1/recipes/batch:
+    post:
+      operationId: batchGetRecipes
+      tags:
+        - Internal Services
+      summary: Batch retrieve recipe records by ID list
+      description: >-
+        Internal endpoint designed for Service 3 (Recommendation & Meal Planner).
+        Receives up to 100 recipe IDs and returns summary or detailed representations
+        without requiring individual roundtrip HTTP requests.
+      x-internal: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchRecipeRequest'
+            example:
+              recipe_ids:
+                - rcp_foodcom_5421
+                - rcp_nlg_108294
+                - rcp_foodcom_9912
+      responses:
+        '200':
+          description: Batch retrieval results containing found recipes and missing IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchRecipeResponse'
+        '400':
+          description: Invalid request payload (e.g., exceeded 100 ID limit)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ingredients/normalize:
+    post:
+      operationId: normalizeIngredients
+      tags:
+        - Ingredient Taxonomy
+      summary: Normalize raw ingredient strings to canonical taxonomy
+      description: >-
+        Maps free-form ingredient text to canonical ingredient entries using exact lexical
+        matches, synonym dictionaries, and pg_trgm similarity. Returns both successfully matched
+        and unmatched ingredients with confidence scores.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NormalizeIngredientsRequest'
+            example:
+              ingredients:
+                - "boneless skinless chicken thighs"
+                - "kosher salt"
+                - "fresh crushed black pepper"
+                - "exotic unlisted spice"
+      responses:
+        '200':
+          description: Normalization mappings for all submitted items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NormalizeIngredientsResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ingredients/suggestions:
+    get:
+      operationId: getIngredientSuggestions
+      tags:
+        - Ingredient Taxonomy
+      summary: Autocomplete search for canonical ingredients
+      description: Fast prefix and trigram lookup on canonical ingredient names for user pantry and search inputs.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Query string prefix or fragment
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          example: chick
+        - name: limit
+          in: query
+          required: false
+          description: Max suggestions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 25
+            default: 10
+          example: 10
+      responses:
+        '200':
+          description: List of matching canonical ingredient candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IngredientSuggestion'
+        '400':
+          description: Missing or empty query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/recipes/search-by-ingredients:
+    post:
+      operationId: searchRecipesByIngredients
+      tags:
+        - Internal Services
+      summary: Candidate recipe retrieval by canonical ingredient IDs
+      description: >-
+        Internal service-to-service endpoint for Service 3 (Planner). Receives canonical ingredient
+        IDs present in user pantry, identifies candidate recipes containing one or more of these ingredients,
+        and returns the candidate recipes along with their full canonical ingredient arrays so Service 3
+        can calculate exact match percentages and missing items.
+      x-internal: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchByIngredientsRequest'
+            example:
+              canonical_ingredient_ids: [101, 204, 305, 412]
+              exclude_pantry_staples: true
+              min_match_pct: 25.0
+              page: 1
+              limit: 24
+      responses:
+        '200':
+          description: Paginated candidate recipes with ingredient arrays
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIngredientCandidates'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unavailable]
+          example: healthy
+        service:
+          type: string
+          example: recipe-ingredient
+        version:
+          type: string
+          example: 0.1.0
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - details
+            - request_id
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Request parameters failed validation
+            details:
+              type: array
+              items:
+                type: object
+                required:
+                  - field
+                  - issue
+                properties:
+                  field:
+                    type: string
+                    example: limit
+                  issue:
+                    type: string
+                    example: Limit cannot exceed 48
+            request_id:
+              type: string
+              format: uuid
+              example: "b1031fa8-17a4-4f81-9b43-4dc9cf7f9e80"
+
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - limit
+        - total_items
+        - total_pages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 48
+          example: 24
+        total_items:
+          type: integer
+          minimum: 0
+          example: 84
+        total_pages:
+          type: integer
+          minimum: 0
+          example: 4
+
+    RecipeSummary:
+      type: object
+      required:
+        - id
+        - source_dataset
+        - source_id
+        - title
+        - rating_count
+      properties:
+        id:
+          type: string
+          description: Unified recipe identifier (rcp_{dataset}_{id})
+          example: rcp_foodcom_5421
+        source_dataset:
+          type: string
+          enum: [food_com, recipenlg]
+          example: food_com
+        source_id:
+          type: string
+          example: "5421"
+        title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+        description:
+          type: [string, "null"]
+          example: "Succulent whole roasted chicken infused with fresh rosemary and roasted garlic cloves."
+        prep_time_minutes:
+          type: [integer, "null"]
+          example: 15
+        cook_time_minutes:
+          type: [integer, "null"]
+          example: 60
+        total_time_minutes:
+          type: [integer, "null"]
+          example: 75
+        servings:
+          type: [integer, "null"]
+          description: Number of servings yield. Strictly null for RecipeNLG records where yield was not recorded.
+          example: 4
+        cuisine:
+          type: [string, "null"]
+          example: Mediterranean
+        source_url:
+          type: [string, "null"]
+          example: "https://www.food.com/recipe/rosemary-chicken-5421"
+        rating_average:
+          type: [number, "null"]
+          description: Average review rating from 1.00 to 5.00. NULL if unrated.
+          example: 4.75
+        rating_count:
+          type: integer
+          description: Number of user reviews. 0 if unrated.
+          example: 28
+        tag_preview:
+          type: array
+          items:
+            type: string
+          maxItems: 5
+          example: ["dinner", "chicken", "poultry", "roast", "gluten-free"]
+
+    PaginatedRecipeSummary:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeSummary'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    RecipeIngredientItem:
+      type: object
+      required:
+        - position
+        - raw_text
+      properties:
+        position:
+          type: integer
+          example: 1
+        raw_text:
+          type: string
+          description: Original verbatim ingredient string from dataset
+          example: "3 lbs whole chicken, rinsed and patted dry"
+        canonical_ingredient_id:
+          type: [integer, "null"]
+          example: 101
+        canonical_name:
+          type: [string, "null"]
+          example: "whole chicken"
+        quantity:
+          type: [number, "null"]
+          example: 3.0
+        unit:
+          type: [string, "null"]
+          example: "lb"
+
+    RecipeInstructionItem:
+      type: object
+      required:
+        - step_number
+        - instruction
+      properties:
+        step_number:
+          type: integer
+          example: 1
+        instruction:
+          type: string
+          example: "Preheat oven to 375 degrees F (190 degrees C). Lightly oil a roasting pan."
+
+    RecipeRawNutrition:
+      type: object
+      required:
+        - raw_calories
+      description: >-
+        Preserves original reported nutrition array from Food.com RAW_recipes.csv.
+        Calories are reported in kcal; all other fields are percentage Daily Values (%DV).
+        Null for RecipeNLG recipes.
+      properties:
+        raw_calories:
+          type: number
+          description: Energy content in kilocalories (kcal)
+          example: 385.4
+        raw_total_fat_pdv:
+          type: [number, "null"]
+          description: Total Fat percentage Daily Value (%DV)
+          example: 22.0
+        raw_sugar_pdv:
+          type: [number, "null"]
+          description: Sugar percentage Daily Value (%DV)
+          example: 2.0
+        raw_sodium_pdv:
+          type: [number, "null"]
+          description: Sodium percentage Daily Value (%DV)
+          example: 18.0
+        raw_protein_pdv:
+          type: [number, "null"]
+          description: Protein percentage Daily Value (%DV)
+          example: 54.0
+        raw_saturated_fat_pdv:
+          type: [number, "null"]
+          description: Saturated Fat percentage Daily Value (%DV)
+          example: 17.0
+        raw_carbohydrates_pdv:
+          type: [number, "null"]
+          description: Carbohydrates percentage Daily Value (%DV)
+          example: 1.0
+
+    RecipeDetail:
+      type: object
+      required:
+        - id
+        - source_dataset
+        - source_id
+        - title
+        - rating_count
+        - ingredients
+        - instructions
+        - tags
+      properties:
+        id:
+          type: string
+          example: rcp_foodcom_5421
+        source_dataset:
+          type: string
+          enum: [food_com, recipenlg]
+          example: food_com
+        source_id:
+          type: string
+          example: "5421"
+        title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+        description:
+          type: [string, "null"]
+          example: "Succulent whole roasted chicken infused with fresh rosemary and roasted garlic cloves."
+        prep_time_minutes:
+          type: [integer, "null"]
+          example: 15
+        cook_time_minutes:
+          type: [integer, "null"]
+          example: 60
+        total_time_minutes:
+          type: [integer, "null"]
+          example: 75
+        servings:
+          type: [integer, "null"]
+          description: Servings yield. Strictly null when unknown; no artificial default.
+          example: 4
+        cuisine:
+          type: [string, "null"]
+          example: Mediterranean
+        source_url:
+          type: [string, "null"]
+          example: "https://www.food.com/recipe/rosemary-chicken-5421"
+        submitted_date:
+          type: [string, "null"]
+          format: date
+          example: "2002-04-18"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+        rating_average:
+          type: [number, "null"]
+          example: 4.75
+        rating_count:
+          type: integer
+          example: 28
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredientItem'
+        instructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeInstructionItem'
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["dinner", "chicken", "poultry", "roast", "gluten-free", "main-dish"]
+        raw_nutrition:
+          type: [object, "null"]
+          $ref: '#/components/schemas/RecipeRawNutrition'
+
+    BatchRecipeRequest:
+      type: object
+      required:
+        - recipe_ids
+      properties:
+        recipe_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+          example: ["rcp_foodcom_5421", "rcp_nlg_108294"]
+        fields:
+          type: array
+          items:
+            type: string
+            enum: [id, title, ingredients, raw_nutrition, tags, time, servings]
+          description: Optional field projection. If omitted, returns standard recipe summaries.
+
+    BatchRecipeResponse:
+      type: object
+      required:
+        - recipes
+        - not_found
+      properties:
+        recipes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeDetail'
+        not_found:
+          type: array
+          items:
+            type: string
+          example: []
+
+    NormalizeIngredientsRequest:
+      type: object
+      required:
+        - ingredients
+      properties:
+        ingredients:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+          example: ["chicken thighs", "kosher salt", "black pepper"]
+
+    NormalizedIngredientResult:
+      type: object
+      required:
+        - raw_input
+        - matched
+      properties:
+        raw_input:
+          type: string
+          example: "boneless chicken thighs"
+        matched:
+          type: boolean
+          example: true
+        canonical_id:
+          type: [integer, "null"]
+          example: 102
+        canonical_name:
+          type: [string, "null"]
+          example: "chicken thigh"
+        category:
+          type: [string, "null"]
+          example: poultry
+        is_pantry_staple:
+          type: [boolean, "null"]
+          example: false
+        confidence:
+          type: [number, "null"]
+          minimum: 0.0
+          maximum: 1.0
+          description: Match confidence score (1.0 = exact dictionary match, <1.0 = trigram similarity)
+          example: 0.95
+
+    NormalizeIngredientsResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NormalizedIngredientResult'
+
+    IngredientSuggestion:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          example: 102
+        name:
+          type: string
+          example: "chicken thigh"
+        category:
+          type: [string, "null"]
+          example: poultry
+        is_pantry_staple:
+          type: boolean
+          example: false
+
+    SearchByIngredientsRequest:
+      type: object
+      required:
+        - canonical_ingredient_ids
+      properties:
+        canonical_ingredient_ids:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: integer
+          example: [101, 102, 204]
+        exclude_pantry_staples:
+          type: boolean
+          default: true
+          example: true
+        min_match_pct:
+          type: number
+          minimum: 0.0
+          maximum: 100.0
+          default: 20.0
+          example: 25.0
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 48
+          default: 24
+          example: 24
+
+    IngredientCandidateItem:
+      type: object
+      required:
+        - recipe_id
+        - title
+        - source_dataset
+        - rating_count
+        - matched_canonical_ids
+        - recipe_canonical_ids
+        - total_recipe_ingredients
+        - match_pct
+      properties:
+        recipe_id:
+          type: string
+          example: rcp_foodcom_5421
+        title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+        source_dataset:
+          type: string
+          example: food_com
+        total_time_minutes:
+          type: [integer, "null"]
+          example: 75
+        servings:
+          type: [integer, "null"]
+          example: 4
+        rating_average:
+          type: [number, "null"]
+          example: 4.75
+        rating_count:
+          type: integer
+          example: 28
+        matched_canonical_ids:
+          type: array
+          items:
+            type: integer
+          example: [101, 204]
+        recipe_canonical_ids:
+          type: array
+          items:
+            type: integer
+          example: [101, 204, 305, 412]
+        total_recipe_ingredients:
+          type: integer
+          example: 4
+        match_pct:
+          type: number
+          example: 50.0
+
+    PaginatedIngredientCandidates:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientCandidateItem'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+

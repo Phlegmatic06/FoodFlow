@@ -1,0 +1,842 @@
+openapi: 3.1.0
+info:
+  title: FoodFlow Profile & Nutrition Service API
+  description: >-
+    Member 1 Service (Port 8001). Provides health biometrics calculation,
+    USDA FoodData Central nutritional lookup, ingredient-based recipe nutrition estimation,
+    and cached recipe nutritional profiles. Fully stateless for guest users with no mandatory account creation.
+  version: 0.1.0
+  contact:
+    name: FoodFlow Architecture Team
+    url: https://github.com/FoodFlow/foodflow
+
+servers:
+  - url: http://localhost:8001
+    description: Local development environment (direct service port)
+  - url: http://profile-service:8001
+    description: Internal container network address (foodflow-net)
+
+tags:
+  - name: System
+    description: Service health and readiness probes
+  - name: Biometrics
+    description: Stateless physical health calculations (BMI, BMR, TDEE, macro distribution)
+  - name: USDA FoodData
+    description: Authoritative nutritional data lookup from USDA FoodData Central
+  - name: Recipe Nutrition
+    description: Ingredient-level nutritional estimation and cached nutritional profiles
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags:
+        - System
+      summary: Service health check
+      description: Returns service runtime status, name, and version for load balancers and orchestrators.
+      responses:
+        '200':
+          description: Service is healthy and ready to accept traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                service: profile-nutrition
+                version: 0.1.0
+
+  /api/v1/biometrics/calculate:
+    post:
+      operationId: calculateBiometrics
+      tags:
+        - Biometrics
+      summary: Calculate nutritional and metabolic targets
+      description: >-
+        Stateless calculation of Body Mass Index (BMI), Basal Metabolic Rate (BMR via Mifflin-St Jeor),
+        Total Daily Energy Expenditure (TDEE), and daily caloric/macronutrient goals.
+        Does not persist user data to disk or database. If sex_for_equation is omitted, returns BMI
+        only and does not fabricate BMR or TDEE values.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiometricsCalculationRequest'
+            example:
+              age_years: 28
+              sex_for_equation: male
+              height_cm: 182.0
+              weight_kg: 80.0
+              activity_level: moderately_active
+              goal: maintain
+      responses:
+        '200':
+          description: Biometric calculation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BiometricsCalculationResponse'
+              example:
+                bmi: 24.15
+                bmi_category: normal_weight
+                bmr_kcal: 1802.5
+                tdee_kcal: 2793.88
+                target_calories_kcal: 2794
+                formula: mifflin_st_jeor
+                activity_multiplier: 1.55
+                goal: maintain
+                goal_adjustment_kcal: 0
+                macro_targets_grams:
+                  protein_g: 140
+                  carbohydrates_g: 349
+                  fat_g: 78
+                macro_ranges_percent:
+                  protein:
+                    min_pct: 10
+                    max_pct: 35
+                  carbohydrates:
+                    min_pct: 45
+                    max_pct: 65
+                  fat:
+                    min_pct: 20
+                    max_pct: 35
+                caveats:
+                  - "BMR calculated using the Mifflin-St Jeor equation (1990)."
+                  - "TDEE applies physical activity level factor 1.55 (moderately active)."
+                  - "Macronutrient distributions are based on the Acceptable Macronutrient Distribution Ranges (AMDR)."
+                disclaimer: >-
+                  These calculated estimates are provided strictly for educational and informational purposes.
+                  They do not constitute medical diagnosis, clinical advice, or individualized nutritional prescription.
+                  Consult a licensed medical provider or registered dietitian before making significant dietary changes.
+        '400':
+          description: Validation error or out-of-range physical measurements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: VALIDATION_ERROR
+                  message: "Validation failed: height_cm must be between 50 and 300 cm"
+                  details:
+                    - field: height_cm
+                      issue: "Value 35.0 is below minimum threshold of 50.0 cm"
+                  request_id: "8c3b44b8-f32a-466d-88b6-e2be351b8744"
+
+  /api/v1/nutrition/foods/search:
+    get:
+      operationId: searchUSDAFoods
+      tags:
+        - USDA FoodData
+      summary: Search USDA FoodData Central items
+      description: Full-text and keyword query against imported USDA foods.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search term or food description prefix
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          example: rolled oats
+        - name: data_type
+          in: query
+          required: false
+          description: Optional filter by USDA dataset sub-type
+          schema:
+            type: string
+            enum: [foundation_food, sr_legacy_food, survey_fndds_food]
+          example: sr_legacy_food
+        - name: page
+          in: query
+          required: false
+          description: 1-indexed page number
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Maximum items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+            default: 24
+          example: 24
+      responses:
+        '200':
+          description: Paginated search results of USDA food items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUSDAFoodSummary'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/nutrition/foods/{fdc_id}:
+    get:
+      operationId: getUSDAFoodDetail
+      tags:
+        - USDA FoodData
+      summary: Retrieve complete USDA food nutrient profile
+      description: Returns food description, all laboratory nutrient measurements per 100g, and standard household portions.
+      parameters:
+        - name: fdc_id
+          in: path
+          required: true
+          description: Authoritative USDA FoodData Central integer identifier
+          schema:
+            type: integer
+          example: 170554
+      responses:
+        '200':
+          description: Full nutrient breakdown and portion data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/USDAFoodDetail'
+        '404':
+          description: USDA food item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: RESOURCE_NOT_FOUND
+                  message: "USDA food item with fdc_id 9999999 was not found"
+                  details: []
+                  request_id: "57f6d2f3-18d2-4ce0-bdc2-b5e1b017b2b8"
+
+  /api/v1/nutrition/recipes/estimate:
+    post:
+      operationId: estimateRecipeNutrition
+      tags:
+        - Recipe Nutrition
+      summary: Calculate nutrient profile from raw ingredients
+      description: >-
+        Internal and client-accessible endpoint. Receives parsed or raw recipe ingredients,
+        maps them against USDA food nutrient composition tables, and aggregates nutritional values.
+        If ingredient coverage is below 80% or key measurements lack gram weights, returns status 'uncalculated'
+        or 'partial' rather than fabricating missing nutrient values.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeNutritionEstimateRequest'
+            example:
+              servings: 4
+              ingredients:
+                - raw_text: "2 cups whole rolled oats"
+                  canonical_name: "rolled oats"
+                  quantity: 2.0
+                  unit: "cup"
+                  quantity_g: 160.0
+                  fdc_id: 170554
+                - raw_text: "1 cup whole milk"
+                  canonical_name: "whole milk"
+                  quantity: 1.0
+                  unit: "cup"
+                  quantity_g: 244.0
+                  fdc_id: 746782
+      responses:
+        '200':
+          description: Nutritional calculation evaluation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeNutritionEstimateResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/nutrition/recipes/{recipe_id}:
+    get:
+      operationId: getCachedRecipeNutrition
+      tags:
+        - Recipe Nutrition
+      summary: Get cached recipe nutritional profile
+      description: >-
+        Retrieves nutritional values stored in profile_nutrition.nutrition_estimates by recipe_id.
+        Differentiates reported approximations from Food.com vs. USDA-calculated estimations.
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          description: Unified recipe identifier (e.g., rcp_foodcom_5421)
+          schema:
+            type: string
+            pattern: '^rcp_(foodcom|nlg)_[a-zA-Z0-9_-]+$'
+          example: rcp_foodcom_5421
+      responses:
+        '200':
+          description: Cached nutritional data for the recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CachedRecipeNutrition'
+        '404':
+          description: No cached nutrition entry exists for the requested recipe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: RESOURCE_NOT_FOUND
+                  message: "No nutrition estimate cached for recipe 'rcp_nlg_108294'"
+                  details: []
+                  request_id: "ef801d01-e63d-4c3d-b45a-c603fc5b93d0"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unavailable]
+          example: healthy
+        service:
+          type: string
+          example: profile-nutrition
+        version:
+          type: string
+          example: 0.1.0
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - details
+            - request_id
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Request parameters failed validation
+            details:
+              type: array
+              items:
+                type: object
+                required:
+                  - field
+                  - issue
+                properties:
+                  field:
+                    type: string
+                    example: age_years
+                  issue:
+                    type: string
+                    example: Age must be an integer between 1 and 120
+            request_id:
+              type: string
+              format: uuid
+              example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - limit
+        - total_items
+        - total_pages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 48
+          example: 24
+        total_items:
+          type: integer
+          minimum: 0
+          example: 142
+        total_pages:
+          type: integer
+          minimum: 0
+          example: 6
+
+    BiometricsCalculationRequest:
+      type: object
+      required:
+        - age_years
+        - height_cm
+        - weight_kg
+        - activity_level
+      properties:
+        age_years:
+          type: integer
+          minimum: 1
+          maximum: 120
+          description: Chronological age in years
+          example: 28
+        sex_for_equation:
+          type: [string, "null"]
+          enum: [male, female, null]
+          description: Biological sex parameter required specifically for Mifflin-St Jeor BMR equation constants (+5 for male, -161 for female). If null, BMR and TDEE are not calculated.
+          example: male
+        height_cm:
+          type: number
+          minimum: 50.0
+          maximum: 300.0
+          description: Height measured in centimeters
+          example: 182.0
+        weight_kg:
+          type: number
+          minimum: 20.0
+          maximum: 500.0
+          description: Weight measured in kilograms
+          example: 80.0
+        activity_level:
+          type: string
+          enum: [sedentary, lightly_active, moderately_active, very_active, extra_active]
+          description: >-
+            Physical activity multiplier:
+            sedentary = 1.2 (little or no exercise),
+            lightly_active = 1.375 (exercise 1-3 days/week),
+            moderately_active = 1.55 (exercise 3-5 days/week),
+            very_active = 1.725 (hard exercise 6-7 days/week),
+            extra_active = 1.9 (hard daily exercise or labor job).
+          example: moderately_active
+        goal:
+          type: string
+          enum: [maintain, lose, gain]
+          default: maintain
+          description: Weight management goal. 'lose' subtracts 300-500 kcal; 'gain' adds 300-500 kcal; 'maintain' targets TDEE.
+          example: maintain
+
+    MacroTargets:
+      type: object
+      required:
+        - protein_g
+        - carbohydrates_g
+        - fat_g
+      properties:
+        protein_g:
+          type: integer
+          example: 140
+        carbohydrates_g:
+          type: integer
+          example: 349
+        fat_g:
+          type: integer
+          example: 78
+
+    MacroRangePercentage:
+      type: object
+      required:
+        - min_pct
+        - max_pct
+      properties:
+        min_pct:
+          type: integer
+          example: 10
+        max_pct:
+          type: integer
+          example: 35
+
+    BiometricsCalculationResponse:
+      type: object
+      required:
+        - bmi
+        - bmi_category
+        - formula
+        - goal
+        - macro_ranges_percent
+        - caveats
+        - disclaimer
+      properties:
+        bmi:
+          type: number
+          description: Body Mass Index (weight in kg / height in meters squared)
+          example: 24.15
+        bmi_category:
+          type: string
+          enum: [underweight, normal_weight, overweight, obesity_class_1, obesity_class_2, obesity_class_3]
+          example: normal_weight
+        bmr_kcal:
+          type: [number, "null"]
+          description: Basal Metabolic Rate in kilocalories per day. NULL if sex_for_equation was not supplied.
+          example: 1802.5
+        tdee_kcal:
+          type: [number, "null"]
+          description: Total Daily Energy Expenditure in kilocalories per day. NULL if BMR could not be calculated.
+          example: 2793.88
+        target_calories_kcal:
+          type: [integer, "null"]
+          description: Recommended daily intake adjusted for goal. NULL if TDEE could not be calculated.
+          example: 2794
+        formula:
+          type: string
+          example: mifflin_st_jeor
+        activity_multiplier:
+          type: [number, "null"]
+          example: 1.55
+        goal:
+          type: string
+          example: maintain
+        goal_adjustment_kcal:
+          type: [integer, "null"]
+          example: 0
+        macro_targets_grams:
+          type: [object, "null"]
+          $ref: '#/components/schemas/MacroTargets'
+        macro_ranges_percent:
+          type: object
+          required:
+            - protein
+            - carbohydrates
+            - fat
+          properties:
+            protein:
+              $ref: '#/components/schemas/MacroRangePercentage'
+            carbohydrates:
+              $ref: '#/components/schemas/MacroRangePercentage'
+            fat:
+              $ref: '#/components/schemas/MacroRangePercentage'
+        caveats:
+          type: array
+          items:
+            type: string
+        disclaimer:
+          type: string
+
+    USDAFoodSummary:
+      type: object
+      required:
+        - fdc_id
+        - data_type
+        - description
+      properties:
+        fdc_id:
+          type: integer
+          description: USDA FoodData Central identifier
+          example: 170554
+        data_type:
+          type: string
+          example: sr_legacy_food
+        description:
+          type: string
+          example: "Oats, whole grain, rolled"
+        food_category_id:
+          type: [integer, "null"]
+          example: 20
+        publication_date:
+          type: [string, "null"]
+          format: date
+          example: "2019-04-01"
+
+    PaginatedUSDAFoodSummary:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/USDAFoodSummary'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    USDANutrientMeasurement:
+      type: object
+      required:
+        - nutrient_id
+        - name
+        - unit_name
+      properties:
+        nutrient_id:
+          type: integer
+          example: 1003
+        name:
+          type: string
+          example: Protein
+        unit_name:
+          type: string
+          example: G
+        amount_per_100g:
+          type: [number, "null"]
+          description: Nutrient amount per 100 grams of edible food portion
+          example: 16.89
+        data_points:
+          type: [integer, "null"]
+          example: 5
+
+    USDAFoodPortion:
+      type: object
+      required:
+        - id
+        - gram_weight
+      properties:
+        id:
+          type: integer
+          example: 87123
+        seq_num:
+          type: [integer, "null"]
+          example: 1
+        amount:
+          type: [number, "null"]
+          example: 1.0
+        portion_description:
+          type: [string, "null"]
+          example: "1 cup"
+        modifier:
+          type: [string, "null"]
+          example: "uncooked"
+        gram_weight:
+          type: number
+          example: 81.0
+
+    USDAFoodDetail:
+      type: object
+      required:
+        - fdc_id
+        - data_type
+        - description
+        - nutrients
+        - portions
+      properties:
+        fdc_id:
+          type: integer
+          example: 170554
+        data_type:
+          type: string
+          example: sr_legacy_food
+        description:
+          type: string
+          example: "Oats, whole grain, rolled"
+        food_category_id:
+          type: [integer, "null"]
+          example: 20
+        publication_date:
+          type: [string, "null"]
+          format: date
+          example: "2019-04-01"
+        nutrients:
+          type: array
+          items:
+            $ref: '#/components/schemas/USDANutrientMeasurement'
+        portions:
+          type: array
+          items:
+            $ref: '#/components/schemas/USDAFoodPortion'
+
+    RecipeIngredientInput:
+      type: object
+      required:
+        - raw_text
+      properties:
+        raw_text:
+          type: string
+          example: "2 cups whole rolled oats"
+        canonical_name:
+          type: [string, "null"]
+          example: "rolled oats"
+        quantity:
+          type: [number, "null"]
+          example: 2.0
+        unit:
+          type: [string, "null"]
+          example: "cup"
+        quantity_g:
+          type: [number, "null"]
+          description: Gram weight equivalent if known
+          example: 160.0
+        fdc_id:
+          type: [integer, "null"]
+          description: Optional pre-mapped USDA Food identifier
+          example: 170554
+
+    RecipeNutritionEstimateRequest:
+      type: object
+      required:
+        - ingredients
+      properties:
+        servings:
+          type: integer
+          minimum: 1
+          default: 1
+          example: 4
+        ingredients:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/RecipeIngredientInput'
+
+    NutrientValues:
+      type: object
+      properties:
+        calories_kcal:
+          type: [number, "null"]
+          example: 607.2
+        total_fat_g:
+          type: [number, "null"]
+          example: 10.8
+        saturated_fat_g:
+          type: [number, "null"]
+          example: 1.9
+        carbohydrates_g:
+          type: [number, "null"]
+          example: 103.2
+        sugar_g:
+          type: [number, "null"]
+          example: 1.2
+        protein_g:
+          type: [number, "null"]
+          example: 26.3
+        sodium_mg:
+          type: [number, "null"]
+          example: 6.4
+        fiber_g:
+          type: [number, "null"]
+          example: 16.5
+
+    IngredientCoverage:
+      type: object
+      required:
+        - mapped_count
+        - total_count
+        - coverage_pct
+      properties:
+        mapped_count:
+          type: integer
+          example: 2
+        total_count:
+          type: integer
+          example: 2
+        coverage_pct:
+          type: number
+          minimum: 0.0
+          maximum: 100.0
+          example: 100.0
+
+    RecipeNutritionEstimateResponse:
+      type: object
+      required:
+        - status
+        - ingredient_coverage
+        - servings
+        - totals
+        - per_serving
+        - unmapped_ingredients
+        - disclaimer
+      properties:
+        status:
+          type: string
+          enum: [calculated, reported_approximate, partial, uncalculated]
+          description: Calculation confidence category based on ingredient coverage and weight availability.
+          example: calculated
+        ingredient_coverage:
+          $ref: '#/components/schemas/IngredientCoverage'
+        servings:
+          type: integer
+          example: 4
+        totals:
+          $ref: '#/components/schemas/NutrientValues'
+        per_serving:
+          $ref: '#/components/schemas/NutrientValues'
+        unmapped_ingredients:
+          type: array
+          items:
+            type: string
+          example: []
+        provenance_note:
+          type: [string, "null"]
+          example: "Aggregated from USDA FoodData Central SR Legacy items (170554, 746782)."
+        disclaimer:
+          type: string
+          example: "Nutritional values are mathematical estimates based on ingredient approximations and may vary."
+
+    CachedRecipeNutrition:
+      type: object
+      required:
+        - recipe_id
+        - status
+        - calculated_at
+      properties:
+        recipe_id:
+          type: string
+          example: rcp_foodcom_5421
+        status:
+          type: string
+          enum: [calculated, reported_approximate, uncalculated]
+          example: reported_approximate
+        calories_kcal:
+          type: [number, "null"]
+          example: 385.4
+        total_fat_g:
+          type: [number, "null"]
+          example: 14.2
+        saturated_fat_g:
+          type: [number, "null"]
+          example: 3.5
+        carbohydrates_g:
+          type: [number, "null"]
+          example: 52.8
+        sugar_g:
+          type: [number, "null"]
+          example: null
+        protein_g:
+          type: [number, "null"]
+          example: 12.1
+        sodium_mg:
+          type: [number, "null"]
+          example: 480.0
+        fiber_g:
+          type: [number, "null"]
+          example: null
+        ingredient_coverage_pct:
+          type: [number, "null"]
+          example: null
+        mapped_ingredient_count:
+          type: [integer, "null"]
+          example: null
+        total_ingredient_count:
+          type: [integer, "null"]
+          example: 8
+        servings:
+          type: [integer, "null"]
+          example: 4
+        provenance_note:
+          type: [string, "null"]
+          example: "Reported in Food.com dataset (RAW_recipes.csv). Calories reported in kcal; macronutrient gram values approximated from FDA 2000 kcal reference percentages."
+        calculated_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+

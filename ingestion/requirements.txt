@@ -1,0 +1,6 @@
+# FoodFlow Dataset Ingestion Framework Dependencies
+# Compatible with Python 3.11+
+# Standard library is preferred for all file, CSV, JSON, hashing, and CLI processing.
+
+psycopg[binary]>=3.1.18
+

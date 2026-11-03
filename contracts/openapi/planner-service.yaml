@@ -1,0 +1,1144 @@
+openapi: 3.1.0
+info:
+  title: FoodFlow Recommendation & Meal Planner Service API
+  description: >-
+    Member 3 Service (Port 8003). Manages guest session lifecycles, pantry inventories,
+    pantry-to-recipe overlap matching, automated meal plan generation, meal plan persistence,
+    cooking progress tracking, and consolidated grocery shopping lists.
+    Relies on REST communication with Recipe Service (Port 8002) and Profile Service (Port 8001).
+    All guest operations are authenticated via the X-Guest-Session-ID header.
+  version: 0.1.0
+  contact:
+    name: FoodFlow Architecture Team
+    url: https://github.com/FoodFlow/foodflow
+
+servers:
+  - url: http://localhost:8003
+    description: Local development environment (direct service port)
+  - url: http://planner-service:8003
+    description: Internal container network address (foodflow-net)
+
+tags:
+  - name: System
+    description: Service health and readiness probes
+  - name: Guest Sessions
+    description: Anonymous UUID session management for registration-free personalization
+  - name: Pantry Inventory
+    description: Active ingredient storage and inventory management
+  - name: Pantry Matching
+    description: Ingredient overlap matching against recipe catalogue
+  - name: Meal Planning
+    description: Multi-day meal plan scheduling, generation, and storage
+  - name: Shopping Lists
+    description: Consolidated grocery checklists generated from meal plans
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags:
+        - System
+      summary: Service health check
+      description: Returns service runtime status, name, and version.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                service: recommendation-planner
+                version: 0.1.0
+
+  /api/v1/guest-sessions:
+    post:
+      operationId: createGuestSession
+      tags:
+        - Guest Sessions
+      summary: Initialize a new anonymous guest session
+      description: >-
+        Generates a persistent UUID guest session token stored in meal_planner.guest_sessions.
+        Enables pantry inventory and meal plan persistence without requiring username, password,
+        or personal identification. Sessions default to a 30-day expiration window.
+      responses:
+        '201':
+          description: Guest session initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestSessionResponse'
+              example:
+                session_id: "e4eaaaf2-d142-4f01-9e73-b3c990b79f82"
+                created_at: "2026-11-03T07:00:00Z"
+                expires_at: "2026-12-03T07:00:00Z"
+                last_active_at: "2026-11-03T07:00:00Z"
+
+  /api/v1/guest-sessions/{session_id}:
+    get:
+      operationId: getGuestSession
+      tags:
+        - Guest Sessions
+      summary: Verify and touch an existing guest session
+      description: Validates session existence and updates last_active_at timestamp.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID guest session identifier
+          schema:
+            type: string
+            format: uuid
+          example: "e4eaaaf2-d142-4f01-9e73-b3c990b79f82"
+      responses:
+        '200':
+          description: Session valid and active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestSessionResponse'
+        '404':
+          description: Guest session not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: SESSION_EXPIRED
+                  message: "Guest session has expired or does not exist"
+                  details: []
+                  request_id: "c8413b71-19b4-4b53-8d63-549b06ce27bb"
+
+  /api/v1/pantry:
+    get:
+      operationId: getPantry
+      tags:
+        - Pantry Inventory
+      summary: Retrieve guest pantry inventory
+      description: Returns stored pantry items for the current session.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+      responses:
+        '200':
+          description: Current pantry inventory items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PantryInventoryResponse'
+        '401':
+          description: Missing or invalid guest session header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      operationId: updatePantry
+      tags:
+        - Pantry Inventory
+      summary: Replace entire guest pantry inventory
+      description: >-
+        Replaces existing pantry inventory with the provided items. Automatically normalizes
+        unmapped raw ingredient names by invoking Recipe Service POST /api/v1/ingredients/normalize.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePantryRequest'
+            example:
+              items:
+                - raw_name: "chicken breasts"
+                  canonical_ingredient_id: 102
+                - raw_name: "garlic cloves"
+                  canonical_ingredient_id: 204
+                - raw_name: "olive oil"
+                  canonical_ingredient_id: 301
+      responses:
+        '200':
+          description: Updated pantry inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PantryInventoryResponse'
+        '400':
+          description: Invalid pantry items payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/pantry/match:
+    post:
+      operationId: matchPantryRecipes
+      tags:
+        - Pantry Matching
+      summary: Find recipes matching pantry ingredients
+      description: >-
+        Core pantry matching orchestration. Executes the following deterministic workflow:
+        1. Normalization: If raw strings are provided, calls Recipe Service POST /api/v1/ingredients/normalize.
+        2. Candidate Retrieval: Calls Recipe Service POST /api/v1/recipes/search-by-ingredients with canonical IDs.
+        3. Match Scoring: Computes match percentage using formula:
+           Match % = (|Matched Canonical Ingredients| / |Total Recipe Canonical Ingredients|) * 100.
+        4. Staple Handling: Excludes common pantry staples (salt, black pepper, water) from missing ingredient lists when exclude_pantry_staples is true.
+        5. Ranking: Sorts descending by match percentage and rating.
+      parameters:
+        - name: X-Guest-Session-ID
+          in: header
+          required: false
+          description: Optional guest session header. If provided and request body ingredients are empty, uses stored pantry items.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PantryMatchRequest'
+            example:
+              ingredients:
+                - "chicken thighs"
+                - "garlic"
+                - "olive oil"
+                - "fresh rosemary"
+              exclude_pantry_staples: true
+              min_match_pct: 30.0
+              page: 1
+              limit: 24
+      responses:
+        '200':
+          description: Ranked matching recipes with overlap metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PantryMatchResponse'
+        '400':
+          description: Invalid request parameters or empty ingredients
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Downstream communication failure with Recipe Service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: SERVICE_UNAVAILABLE
+                  message: "Downstream Recipe Service (port 8002) timed out or returned an unexpected response"
+                  details: []
+                  request_id: "3a8d11c0-2f92-49bb-b145-c8b1836f3329"
+
+  /api/v1/meal-plans/generate:
+    post:
+      operationId: generateMealPlan
+      tags:
+        - Meal Planning
+      summary: Auto-generate a structured meal plan
+      description: >-
+        Generates a balanced 1 to 14 day meal schedule across breakfast, lunch, dinner, and snack slots.
+        Orchestration workflow:
+        1. If nutritional targets are supplied or requested, queries Profile Service via REST.
+        2. Retrieves candidate recipes from Recipe Service matching time, dietary tags, and pantry preferences.
+        3. Recipes lacking complete nutritional data are NOT excluded from generation; uncalculated nutrition is clearly indicated.
+        4. Applies deterministic variety rules so identical recipes are not assigned to adjacent days.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateMealPlanRequest'
+            example:
+              days: 3
+              slots: [breakfast, lunch, dinner]
+              target_calories_kcal: 2400
+              diet_preference: vegetarian
+              max_time_per_recipe: 45
+      responses:
+        '200':
+          description: Generated meal plan proposal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedMealPlanResponse'
+        '400':
+          description: Invalid generation parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/meal-plans:
+    post:
+      operationId: saveMealPlan
+      tags:
+        - Meal Planning
+      summary: Save a meal plan to the guest session
+      description: Persists scheduled meal slots and denormalized recipe titles to meal_planner.meal_plans.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveMealPlanRequest'
+            example:
+              name: "Weekly Fitness Fuel"
+              target_calories_kcal: 2400
+              days: 1
+              slots:
+                - day_index: 0
+                  slot_type: breakfast
+                  recipe_id: rcp_foodcom_5421
+                  recipe_title: "Classic Rosemary Garlic Roasted Chicken"
+                - day_index: 0
+                  slot_type: dinner
+                  recipe_id: rcp_nlg_108294
+                  recipe_title: "Quick Steamed Green Beans"
+      responses:
+        '201':
+          description: Meal plan saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedMealPlanSummary'
+        '401':
+          description: Missing or invalid guest session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/meal-plans/{plan_id}:
+    get:
+      operationId: getMealPlan
+      tags:
+        - Meal Planning
+      summary: Retrieve saved meal plan details
+      description: Returns meal plan metadata and all assigned slots with cooking progress status.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+        - name: plan_id
+          in: path
+          required: true
+          description: UUID meal plan identifier
+          schema:
+            type: string
+            format: uuid
+          example: "7c14a2f1-6a20-4e31-8930-b19329048f32"
+      responses:
+        '200':
+          description: Full meal plan representation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealPlanDetail'
+        '404':
+          description: Meal plan not found or not owned by session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      operationId: updateMealPlan
+      tags:
+        - Meal Planning
+      summary: Replace meal plan schedule
+      description: Replaces assigned slots and target metadata for an existing meal plan.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+        - name: plan_id
+          in: path
+          required: true
+          description: UUID meal plan identifier
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveMealPlanRequest'
+      responses:
+        '200':
+          description: Meal plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealPlanDetail'
+        '404':
+          description: Meal plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      operationId: deleteMealPlan
+      tags:
+        - Meal Planning
+      summary: Delete meal plan
+      description: Removes meal plan, assigned slots, and associated shopping lists.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+        - name: plan_id
+          in: path
+          required: true
+          description: UUID meal plan identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Meal plan and related shopping list deleted
+        '404':
+          description: Meal plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/meal-plans/{plan_id}/shopping-list:
+    get:
+      operationId: getShoppingList
+      tags:
+        - Shopping Lists
+      summary: Get or generate consolidated shopping list
+      description: >-
+        Consolidates ingredient requirements across all planned recipes in the meal plan.
+        Invokes Recipe Service POST /api/v1/recipes/batch to retrieve ingredients,
+        groups items into standard grocery aisles (Produce, Dairy, Meat/Poultry, Pantry Staples, Other),
+        and maintains checklist item state.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+        - name: plan_id
+          in: path
+          required: true
+          description: UUID meal plan identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Consolidated grocery shopping list grouped by category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '404':
+          description: Meal plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/meal-plans/{plan_id}/shopping-list/items/{item_id}:
+    patch:
+      operationId: updateShoppingListItem
+      tags:
+        - Shopping Lists
+      summary: Toggle shopping item checked status
+      description: Updates the boolean procurement state of a shopping list item.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShoppingItemRequest'
+            example:
+              checked: true
+      responses:
+        '200':
+          description: Shopping item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListItem'
+        '404':
+          description: Item or meal plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/meal-plans/{plan_id}/progress:
+    patch:
+      operationId: updateCookingProgress
+      tags:
+        - Meal Planning
+      summary: Update cooking status of planned meal slots
+      description: >-
+        Updates cooking execution status ('pending', 'cooked', 'skipped') directly on meal_plan_slots.
+        Eliminates the need for a redundant progress table.
+      parameters:
+        - $ref: '#/components/parameters/XGuestSessionID'
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCookingProgressRequest'
+            example:
+              updates:
+                - slot_id: 101
+                  cooking_status: cooked
+                - slot_id: 102
+                  cooking_status: skipped
+      responses:
+        '200':
+          description: Progress successfully recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateProgressResponse'
+              example:
+                updated_count: 2
+                plan_id: "7c14a2f1-6a20-4e31-8930-b19329048f32"
+        '404':
+          description: Meal plan or slot not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    XGuestSessionID:
+      name: X-Guest-Session-ID
+      in: header
+      required: true
+      description: Persistent UUID guest session token verifying ownership of stored plans and pantry
+      schema:
+        type: string
+        format: uuid
+      example: "e4eaaaf2-d142-4f01-9e73-b3c990b79f82"
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unavailable]
+          example: healthy
+        service:
+          type: string
+          example: recommendation-planner
+        version:
+          type: string
+          example: 0.1.0
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - details
+            - request_id
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Request parameters failed validation
+            details:
+              type: array
+              items:
+                type: object
+                required:
+                  - field
+                  - issue
+                properties:
+                  field:
+                    type: string
+                    example: days
+                  issue:
+                    type: string
+                    example: Days parameter must be between 1 and 14
+            request_id:
+              type: string
+              format: uuid
+              example: "40fe1052-bb82-4161-9c6f-5bca81b89be1"
+
+    PaginationInfo:
+      type: object
+      required:
+        - page
+        - limit
+        - total_items
+        - total_pages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 48
+          example: 24
+        total_items:
+          type: integer
+          minimum: 0
+          example: 18
+        total_pages:
+          type: integer
+          minimum: 0
+          example: 1
+
+    GuestSessionResponse:
+      type: object
+      required:
+        - session_id
+        - created_at
+        - expires_at
+        - last_active_at
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          example: "e4eaaaf2-d142-4f01-9e73-b3c990b79f82"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          example: "2026-12-03T07:00:00Z"
+        last_active_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+
+    PantryItem:
+      type: object
+      required:
+        - id
+        - raw_name
+      properties:
+        id:
+          type: integer
+          example: 1
+        raw_name:
+          type: string
+          example: "chicken breasts"
+        canonical_ingredient_id:
+          type: [integer, "null"]
+          description: External reference to recipe_catalog.canonical_ingredients.id
+          example: 102
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+
+    PantryInventoryResponse:
+      type: object
+      required:
+        - items
+        - total_count
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PantryItem'
+        total_count:
+          type: integer
+          example: 3
+
+    UpdatePantryItemInput:
+      type: object
+      required:
+        - raw_name
+      properties:
+        raw_name:
+          type: string
+          example: "chicken breasts"
+        canonical_ingredient_id:
+          type: [integer, "null"]
+          example: 102
+
+    UpdatePantryRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          minItems: 0
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/UpdatePantryItemInput'
+
+    PantryMatchRequest:
+      type: object
+      properties:
+        ingredients:
+          type: array
+          items:
+            type: string
+          example: ["chicken thighs", "garlic", "olive oil"]
+        exclude_pantry_staples:
+          type: boolean
+          default: true
+          example: true
+        min_match_pct:
+          type: number
+          minimum: 0.0
+          maximum: 100.0
+          default: 30.0
+          example: 30.0
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 48
+          default: 24
+          example: 24
+
+    PantryMatchResultItem:
+      type: object
+      required:
+        - recipe_id
+        - title
+        - match_pct
+        - matched_ingredients
+        - missing_ingredients
+        - total_recipe_ingredients
+      properties:
+        recipe_id:
+          type: string
+          example: rcp_foodcom_5421
+        title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+        match_pct:
+          type: number
+          example: 75.0
+        matched_ingredients:
+          type: array
+          items:
+            type: string
+          example: ["chicken thighs", "garlic", "olive oil"]
+        missing_ingredients:
+          type: array
+          items:
+            type: string
+          example: ["fresh rosemary"]
+        total_recipe_ingredients:
+          type: integer
+          example: 4
+        total_time_minutes:
+          type: [integer, "null"]
+          example: 75
+        rating_average:
+          type: [number, "null"]
+          example: 4.75
+
+    PantryMatchResponse:
+      type: object
+      required:
+        - matches
+        - pagination
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/PantryMatchResultItem'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    GenerateMealPlanRequest:
+      type: object
+      required:
+        - days
+        - slots
+      properties:
+        days:
+          type: integer
+          minimum: 1
+          maximum: 14
+          default: 1
+          example: 3
+        slots:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [breakfast, lunch, dinner, snack]
+          default: [breakfast, lunch, dinner]
+          example: [breakfast, lunch, dinner]
+        target_calories_kcal:
+          type: [integer, "null"]
+          minimum: 800
+          maximum: 6000
+          example: 2400
+        cuisine_preference:
+          type: [string, "null"]
+          example: Italian
+        diet_preference:
+          type: [string, "null"]
+          example: vegetarian
+        max_time_per_recipe:
+          type: [integer, "null"]
+          example: 45
+        pantry_ingredients:
+          type: array
+          items:
+            type: string
+          example: ["rolled oats", "milk"]
+
+    GeneratedSlotProposal:
+      type: object
+      required:
+        - slot_type
+        - recipe_id
+        - title
+      properties:
+        slot_type:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+          example: breakfast
+        recipe_id:
+          type: string
+          example: rcp_foodcom_5421
+        title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+        total_time_minutes:
+          type: [integer, "null"]
+          example: 45
+        estimated_calories_kcal:
+          type: [number, "null"]
+          example: 450.0
+
+    GeneratedDayPlan:
+      type: object
+      required:
+        - day_index
+        - slots
+      properties:
+        day_index:
+          type: integer
+          example: 0
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedSlotProposal'
+        day_total_calories_kcal:
+          type: [number, "null"]
+          example: 2350.0
+
+    GeneratedMealPlanResponse:
+      type: object
+      required:
+        - days
+      properties:
+        target_calories_kcal:
+          type: [integer, "null"]
+          example: 2400
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedDayPlan'
+        notes:
+          type: array
+          items:
+            type: string
+          example: ["Plan generated without dietary restrictions.", "Caloric targets matched within 5% tolerance."]
+
+    MealPlanSlotInput:
+      type: object
+      required:
+        - day_index
+        - slot_type
+        - recipe_id
+        - recipe_title
+      properties:
+        day_index:
+          type: integer
+          minimum: 0
+          example: 0
+        slot_type:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+          example: breakfast
+        recipe_id:
+          type: string
+          example: rcp_foodcom_5421
+        recipe_title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+
+    SaveMealPlanRequest:
+      type: object
+      required:
+        - name
+        - days
+        - slots
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "My Weekly Plan"
+        target_calories_kcal:
+          type: [integer, "null"]
+          example: 2400
+        days:
+          type: integer
+          minimum: 1
+          maximum: 14
+          example: 3
+        slots:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MealPlanSlotInput'
+
+    SavedMealPlanSummary:
+      type: object
+      required:
+        - plan_id
+        - name
+        - days
+        - created_at
+      properties:
+        plan_id:
+          type: string
+          format: uuid
+          example: "7c14a2f1-6a20-4e31-8930-b19329048f32"
+        name:
+          type: string
+          example: "My Weekly Plan"
+        days:
+          type: integer
+          example: 3
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+
+    MealPlanSlotDetail:
+      type: object
+      required:
+        - id
+        - day_index
+        - slot_type
+        - recipe_id
+        - recipe_title
+        - cooking_status
+      properties:
+        id:
+          type: integer
+          example: 101
+        day_index:
+          type: integer
+          example: 0
+        slot_type:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+          example: breakfast
+        recipe_id:
+          type: string
+          example: rcp_foodcom_5421
+        recipe_title:
+          type: string
+          example: "Classic Rosemary Garlic Roasted Chicken"
+        cooking_status:
+          type: string
+          enum: [pending, cooked, skipped]
+          example: pending
+        status_updated_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+
+    MealPlanDetail:
+      type: object
+      required:
+        - id
+        - name
+        - days
+        - slots
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "7c14a2f1-6a20-4e31-8930-b19329048f32"
+        name:
+          type: string
+          example: "My Weekly Plan"
+        target_calories_kcal:
+          type: [integer, "null"]
+          example: 2400
+        days:
+          type: integer
+          example: 3
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/MealPlanSlotDetail'
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-11-03T07:00:00Z"
+
+    ShoppingListItem:
+      type: object
+      required:
+        - id
+        - ingredient_name
+        - checked
+      properties:
+        id:
+          type: integer
+          example: 12
+        ingredient_name:
+          type: string
+          example: "fresh rosemary"
+        quantity_display:
+          type: [string, "null"]
+          example: "2 tbsp"
+        category:
+          type: [string, "null"]
+          example: Produce
+        checked:
+          type: boolean
+          example: false
+
+    ShoppingListCategoryGroup:
+      type: object
+      required:
+        - category
+        - items
+      properties:
+        category:
+          type: string
+          example: Produce
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShoppingListItem'
+
+    ShoppingListResponse:
+      type: object
+      required:
+        - id
+        - plan_id
+        - categories
+        - total_items
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "8b22a1c0-4f91-4a11-8932-d19329048f99"
+        plan_id:
+          type: string
+          format: uuid
+          example: "7c14a2f1-6a20-4e31-8930-b19329048f32"
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShoppingListCategoryGroup'
+        total_items:
+          type: integer
+          example: 14
+
+    UpdateShoppingItemRequest:
+      type: object
+      required:
+        - checked
+      properties:
+        checked:
+          type: boolean
+          example: true
+
+    SlotCookingProgressUpdate:
+      type: object
+      required:
+        - slot_id
+        - cooking_status
+      properties:
+        slot_id:
+          type: integer
+          example: 101
+        cooking_status:
+          type: string
+          enum: [pending, cooked, skipped]
+          example: cooked
+
+    UpdateCookingProgressRequest:
+      type: object
+      required:
+        - updates
+      properties:
+        updates:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SlotCookingProgressUpdate'
+
+    UpdateProgressResponse:
+      type: object
+      required:
+        - updated_count
+        - plan_id
+      properties:
+        updated_count:
+          type: integer
+          example: 2
+        plan_id:
+          type: string
+          format: uuid
+          example: "7c14a2f1-6a20-4e31-8930-b19329048f32"
+
