@@ -50,6 +50,7 @@ from ingestion.manifest import (
 )
 from ingestion.utils.checksums import compute_file_sha256, format_bytes, get_file_metadata
 from ingestion.utils.csv_utils import count_csv_rows, inspect_csv_header
+from ingestion.sampling import FoodComSampler, RecipeNLGSampler
 
 
 logger = get_logger("cli")
@@ -557,6 +558,52 @@ def cmd_ingest_recipenlg(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_sample(args: argparse.Namespace) -> int:
+    """Execute stratified development sampling for Food.com or RecipeNLG."""
+    key = resolve_dataset_key(args.dataset)
+    if key not in ("foodcom", "recipenlg"):
+        print(
+            f"\n[ERROR] Stratified sampling is supported for 'foodcom' and 'recipenlg'. Got '{args.dataset}'.",
+            file=sys.stderr,
+        )
+        print("Note: USDA reference data is ingested directly and not randomly sampled.", file=sys.stderr)
+        return 1
+
+    source_path = Path(args.source).resolve()
+    if not source_path.exists():
+        print(f"\n[ERROR] Source path does not exist: {source_path}", file=sys.stderr)
+        return 1
+
+    output_dir = (
+        Path(args.output_dir).resolve()
+        if args.output_dir
+        else (PROCESSED_DATA_DIR / "dev_sample" / key).resolve()
+    )
+
+    try:
+        if key == "foodcom":
+            sampler = FoodComSampler(
+                source_path=source_path,
+                output_dir=output_dir,
+                limit=args.limit,
+                seed=args.seed,
+            )
+        else:
+            sampler = RecipeNLGSampler(
+                source_path=source_path,
+                output_dir=output_dir,
+                limit=args.limit,
+                seed=args.seed,
+            )
+
+        report = sampler.run(dry_run=args.dry_run)
+        report.print_summary()
+        return 0
+    except Exception as e:
+        print(f"\n[ERROR] Sampling Failed: {e}", file=sys.stderr)
+        return 1
+
+
 # -----------------------------------------------------------------------------
 # Main Entry Point
 # -----------------------------------------------------------------------------
@@ -564,7 +611,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Construct the top-level argument parser for the ingestion CLI."""
     parser = argparse.ArgumentParser(
         prog="python -m ingestion.cli",
-        description="FoodFlow Dataset Ingestion & Seeding Infrastructure CLI (Phase 1, Step 03.4)",
+        description="FoodFlow Dataset Ingestion & Seeding Infrastructure CLI (Phase 1, Step 03.5)",
         epilog="Academic non-commercial educational use only. Respects USDA, Food.com, and RecipeNLG licenses.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -734,6 +781,51 @@ def build_parser() -> argparse.ArgumentParser:
         help="Force ingestion even if additive migration column (source_origin) is absent.",
     )
 
+
+    # 8. sample
+    sample_parser = subparsers.add_parser(
+        "sample",
+        help="Generate stratified development sample subsets (Food.com and RecipeNLG).",
+    )
+    sample_parser.add_argument(
+        "--dataset",
+        "-d",
+        required=True,
+        choices=["foodcom", "recipenlg", "food_com", "recipe_nlg"],
+        help="Target dataset to sample ('foodcom' or 'recipenlg').",
+    )
+    sample_parser.add_argument(
+        "--source",
+        "-s",
+        required=True,
+        help="Path to dataset file, directory, or ZIP archive.",
+    )
+    sample_parser.add_argument(
+        "--output-dir",
+        "-o",
+        default=None,
+        help="Directory to write sampled CSV files and audit report (default: data/processed/dev_sample/<dataset>).",
+    )
+    sample_parser.add_argument(
+        "--limit",
+        "-l",
+        type=int,
+        default=25000,
+        help="Target sample size (number of recipes, default: 25000).",
+    )
+    sample_parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Deterministic random seed (default: 42).",
+    )
+    sample_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Execute stratum profiling and quota allocation without writing output files.",
+    )
+
     return parser
 
 
@@ -768,6 +860,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_ingest_foodcom(args)
     elif args.command == "ingest-recipenlg":
         return cmd_ingest_recipenlg(args)
+    elif args.command == "sample":
+        return cmd_sample(args)
     else:
         parser.print_help()
         return 1

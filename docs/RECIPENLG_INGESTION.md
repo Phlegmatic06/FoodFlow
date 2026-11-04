@@ -132,6 +132,9 @@ All tables are deployed strictly within the `recipe_catalog` schema, adhering to
 
 RecipeNLG includes a `source` field identifying whether a recipe was sourced from the `Gathered` web crawl or the `Recipes1M` dataset.
 
+> [!IMPORTANT]
+> **Source Provenance Derivation**: The `source_origin` field is derived strictly and exclusively from the original `source` column. The importer and sampling engine support verified encodings (`'Gathered'` / `'1'` mapped to `'Gathered'`, and `'Recipes1M'` / `'recipe1m'` / `'0'` mapped to `'Recipes1M'`). Unrecognized, non-standard, or missing values evaluate to `NULL` (or `'Unknown'` in sampling strata). Under no circumstances are recipe IDs used to infer or substitute provenance origin.
+
 Because `source_origin` is distinct from `source_dataset` (`'recipenlg'`), `source_url`, `cuisine`, or `recipe_tags`, FoodFlow provides an additive migration:
 
 ```sql
@@ -218,7 +221,7 @@ python -m ingestion.cli ingest-recipenlg --source data/raw/recipenlg/full_datase
 ### 7.4 Live Ingestion
 ```powershell
 # Set database connection string (foodflow_admin role)
-$env:DATABASE_URL = "postgresql://foodflow_admin:AdminSecure2026!@localhost:5432/foodflow_db"
+$env:DATABASE_URL = "postgresql://foodflow_admin:CHANGE_ME@localhost:5432/foodflow_db"
 
 # Apply migration 005 first
 psql $env:DATABASE_URL -f database/migrations/005_add_recipenlg_source_origin.sql

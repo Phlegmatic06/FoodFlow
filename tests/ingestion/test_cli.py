@@ -42,6 +42,20 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(args.limit, 50)
         self.assertTrue(args.force)
 
+        args = self.parser.parse_args(["sample", "-d", "foodcom", "-s", "fake_dir", "--limit", "100", "--seed", "123", "--dry-run"])
+        self.assertEqual(args.command, "sample")
+        self.assertEqual(args.dataset, "foodcom")
+        self.assertEqual(args.limit, 100)
+        self.assertEqual(args.seed, 123)
+        self.assertTrue(args.dry_run)
+
+        args = self.parser.parse_args(["sample", "-d", "recipenlg", "-s", "fake.csv"])
+        self.assertEqual(args.command, "sample")
+        self.assertEqual(args.dataset, "recipenlg")
+        self.assertEqual(args.limit, 25000)
+        self.assertEqual(args.seed, 42)
+        self.assertFalse(args.dry_run)
+
     def test_doctor_command_execution(self):
         # Test doctor command stdout capture
         captured = io.StringIO()

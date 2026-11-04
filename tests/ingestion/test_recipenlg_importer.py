@@ -251,6 +251,33 @@ class TestRecipeNLGValidator(unittest.TestCase):
         rec = validate_recipe_record(long_title_row, line_number=8)
         self.assertEqual(len(rec.title), 512)
 
+    def test_validate_recipe_record_source_origin_constraint_compliance(self):
+        """Verify source_origin maps to 'Gathered', 'Recipes1M', or None (SQL NULL) to satisfy Migration 005."""
+        base_row = {
+            "id": "600",
+            "title": "Origin Recipe",
+            "ingredients": '["sugar"]',
+            "directions": '["stir"]',
+            "link": "",
+        }
+
+        # Gathered variants
+        for val in ("Gathered", "gathered", "1"):
+            rec = validate_recipe_record(dict(base_row, source=val), line_number=2)
+            self.assertEqual(rec.source_origin, "Gathered")
+
+        # Recipes1M variants
+        for val in ("Recipes1M", "recipes1m", "recipe1m", "0"):
+            rec = validate_recipe_record(dict(base_row, source=val), line_number=3)
+            self.assertEqual(rec.source_origin, "Recipes1M")
+
+        # Unknown / Unrecognized / Missing / Empty values must evaluate to None (NULL)
+        # to strictly satisfy Migration 005 check constraint:
+        # CHECK (source_origin IS NULL OR source_origin IN ('Gathered', 'Recipes1M'))
+        for val in ("allrecipes.com", "custom_crawler", "2", "", None):
+            rec = validate_recipe_record(dict(base_row, source=val), line_number=4)
+            self.assertIsNone(rec.source_origin)
+
 
 class TestRecipeNLGSourceAndZipHandling(unittest.TestCase):
     """Test streaming file reader for uncompressed directories, direct CSV, and ZIP archives."""

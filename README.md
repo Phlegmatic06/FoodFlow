@@ -140,6 +140,7 @@ FoodFlow/
 │   ├── USDA_INGESTION.md
 │   ├── FOODCOM_INGESTION.md
 │   ├── RECIPENLG_INGESTION.md
+│   ├── SAMPLING_GUIDE.md
 │   └── IMPLEMENTATION_ROADMAP.md
 ├── k8s/                            # Production Kubernetes deployment manifests
 │   ├── config/                     # ConfigMaps and Secrets (placeholders only)
@@ -154,7 +155,7 @@ FoodFlow/
 │   └── recommendation-planner/     # Member 3 service (FastAPI)
 ├── frontend/                       # Shared React + Vite SPA
 └── tests/
-    └── ingestion/                  # Ingestion unit test suite (76 tests)
+    └── ingestion/                  # Ingestion & sampling unit test suite (115 tests)
 ```
 
 ### Key Architectural Note: VM Images (Glance) vs Container Images
@@ -195,4 +196,7 @@ Detailed architectural and engineering blueprints are available in the [`docs/`]
    Technical specification for ingesting Food.com recipes and user reviews: safe AST parsing, %DV nutrition array preservation, temporary staging table ratings aggregation, and full-text search vector generation.
 11. [**RecipeNLG Ingestion Guide (`docs/RECIPENLG_INGESTION.md`)**](docs/RECIPENLG_INGESTION.md)  
    Technical specification for ingesting the RecipeNLG corpus (~2.23M recipes): streaming parser, conservative quantity parsing, NER canonical ingredient linking, and additive migration 005.
+12. [**Dataset Sampling & Development Seed Guide (`docs/SAMPLING_GUIDE.md`)**](docs/SAMPLING_GUIDE.md)  
+   Technical specification for the unified stratified reservoir sampling engine: proportional stratum quota allocation (Hamilton-Hare largest remainder), Food.com tag and cooking-time bucketing, 100% referential interaction filtering, and RecipeNLG structural stratification ($O(M)$ memory bounded).
+
 

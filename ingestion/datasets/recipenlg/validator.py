@@ -121,12 +121,12 @@ def validate_recipe_record(
     source_origin: Optional[str] = None
     if raw_source:
         lower_source = raw_source.lower()
-        if lower_source == "gathered":
+        if lower_source in ("gathered", "1"):
             source_origin = "Gathered"
-        elif lower_source in ("recipes1m", "recipe1m"):
+        elif lower_source in ("recipes1m", "recipe1m", "0"):
             source_origin = "Recipes1M"
         else:
-            source_origin = raw_source[:32]
+            source_origin = None
 
     # 4. Source URL / Link
     source_url = clean_text(_lookup_field(row, "link", "url"))

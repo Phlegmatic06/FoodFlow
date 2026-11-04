@@ -265,8 +265,10 @@ python -m ingestion.cli ingest-ratings --source data/raw/foodcom/RAW_interaction
 ### 6.3 Development Sampling vs Full Production Scale & Broad Coverage
 - **Broad General-Purpose Coverage**: FoodFlow is architected as a comprehensive, general-purpose culinary and cooking platform, not exclusively a health recipe filter. Search and discovery must support everyday weeknight dinners, comfort foods, regional cuisines (Asian, Latin, Mediterranean, European, etc.), baking, desserts, snacks, and beverages.
 - **Stratified Development Sampling**:
-  - The local development target (25,000 Food.com + 25,000 RecipeNLG recipes + full USDA SR-Legacy dictionary) is a **temporary seed**.
-  - The sampling strategy in `ingestion/` must use **stratified sampling across categories, tags, cuisines, and ingredient lengths**, rather than taking the first 25,000 sequential rows of raw CSVs.
+  - The local development target (25,000 Food.com + 25,000 RecipeNLG recipes + full USDA SR-Legacy dictionary) is a **reproducible development seed**.
+  - Implemented in Step 03.5 via `ingestion.sampling` (`python -m ingestion.cli sample`).
+  - Uses two-pass streaming with proportional stratum allocation (Hamilton-Hare largest remainder) and deterministic reservoir sampling.
+  - Food.com is stratified across meal categories and cooking-time buckets with 100% referential interaction filtering. RecipeNLG is stratified across sub-corpus origin, NER richness, and directions availability. Complete architecture documented in [`docs/SAMPLING_GUIDE.md`](SAMPLING_GUIDE.md).
   - Total dev DB footprint: $< 1.2 \text{ GB}$ (measured goal for laptop comfort).
 - **Full Production Catalogue Scale**:
   - The ingestion pipeline supports both `--limit` sampling and full dataset ingestion (`--full`).

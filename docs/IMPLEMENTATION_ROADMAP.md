@@ -106,8 +106,18 @@ To ensure a smooth, risk-controlled workflow for a 3-person student team, FoodFl
     - Extended CLI with `python -m ingestion.cli ingest-recipenlg` supporting `--source`, `--batch-size`, `--dry-run`, `--limit`, `--force`.
     - 76 unit tests passing (27 framework + 14 USDA + 18 Food.com + 17 RecipeNLG integration tests).
     - Created comprehensive engineering documentation: `docs/RECIPENLG_INGESTION.md`.
-  - **Step 03.5 (Stratified Recipe Sampler & Seeding)**: Build stratified development sampler (25k + 25k seed) and benchmark ingestion and FTS query latency.
-- **Milestone Exit Gate**: Running `python -m ingestion.cli seed-dev` populates the database with 50,000 clean, diverse, searchable recipes in $< 5 \text{ minutes}$. Full-scale ingestion pipeline verified on staging.
+  - **Step 03.5 (Unified Stratified Sampling Engine & Dev Data Preparation)**: **Completed (Authoritative PASS)**.
+    - Implemented `ingestion/sampling/` (`base.py`, `foodcom_sampler.py`, `recipenlg_sampler.py`, `reports.py`).
+    - Two-pass memory-bounded streaming architecture ($O(M)$ memory where $M$ is sample size, $O(1)$ stream buffering).
+    - Proportional stratum quota allocation using the Hamilton-Hare Largest Remainder Method with guaranteed minimum representation.
+    - Food.com: Stratified across 7 primary meal categories and 5 cooking time buckets.
+    - Food.com Interaction Filtering: 100% referential integrity with zero ghost interactions by retaining all reviews matching sampled recipe IDs.
+    - RecipeNLG: Stratified across sub-corpus origin (`Gathered` vs `Recipes1M`), 4 NER richness tiers, and directions availability.
+    - Preserves exact original CSV column headers and raw data formats.
+    - Extended CLI with `python -m ingestion.cli sample` supporting `--dataset`, `--source`, `--output-dir`, `--limit`, `--seed`, `--dry-run`.
+    - 115 unit tests passing (27 framework + 14 USDA + 18 Food.com + 18 RecipeNLG + 38 sampling tests).
+    - Created comprehensive engineering documentation: `docs/SAMPLING_GUIDE.md`.
+- **Milestone Exit Gate**: Deterministic stratified development sampling operational via CLI. 115 unit tests passing. Full-scale ingestion pipeline verified on staging.
 
 ---
 

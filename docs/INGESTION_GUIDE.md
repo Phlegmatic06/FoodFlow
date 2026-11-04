@@ -302,5 +302,37 @@ The framework never silently drops bad records. The `IngestionProgressTracker` t
    - Ambiguity-free canonical ingredient linking using pre-extracted NER entities.
    - Computes weighted full-text search vector `tsv_search` (title: A, ingredients: B).
    - Detailed guide: [`docs/RECIPENLG_INGESTION.md`](RECIPENLG_INGESTION.md).
-4. **Step 03.5 (Stratified Sampler)**: Planned. Implements `ingestion/sampling/` to generate the 25k Food.com + 25k RecipeNLG development seed subset ($< 1.2\text{ GB}$).
+4. **Step 03.5 (Stratified Sampling Engine)**: **Completed (Authoritative PASS)**.
+   - Package: `ingestion/sampling/` (`base.py`, `foodcom_sampler.py`, `recipenlg_sampler.py`, `reports.py`).
+   - Two-pass memory-bounded streaming architecture ($O(M)$ memory where $M$ is sample size, $O(1)$ stream buffering).
+   - Food.com: Stratified across 7 primary categories (Breakfast, Lunch, Dinner, Dessert, Snack, Beverage, Other) and 5 cooking time buckets.
+   - Food.com Interaction Filtering: Preserves 100% referential integrity with zero ghost interactions by retaining all reviews matching sampled recipe IDs.
+   - RecipeNLG: Stratified across source origin (`Gathered` vs `Recipes1M`), 4 NER richness tiers, and directions availability.
+   - Preserves complete original CSV columns verbatim without fabricating missing fields.
+   - Detailed guide: [`docs/SAMPLING_GUIDE.md`](SAMPLING_GUIDE.md).
+
+---
+
+## 10. Development Dataset Sampling Commands
+
+Generate representative 25,000-recipe development subsets using the CLI:
+
+```bash
+# Food.com: Stratified sample + referential interaction filtering
+python -m ingestion.cli sample \
+  --dataset foodcom \
+  --source data/raw/foodcom \
+  --output-dir data/processed/dev_sample/foodcom \
+  --limit 25000 \
+  --seed 42
+
+# RecipeNLG: Stratified sample
+python -m ingestion.cli sample \
+  --dataset recipenlg \
+  --source data/raw/recipenlg/full_dataset.csv \
+  --output-dir data/processed/dev_sample/recipenlg \
+  --limit 25000 \
+  --seed 42
+```
+
 

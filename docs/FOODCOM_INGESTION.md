@@ -229,7 +229,7 @@ python -m ingestion.cli ingest-foodcom --source data/raw/foodcom/ --dry-run
 Perform full live ingestion using the administrative database connection:
 ```powershell
 # Set database connection string
-$env:DATABASE_URL = "postgresql://foodflow_admin:AdminSecure2026!@localhost:5432/foodflow_db"
+$env:DATABASE_URL = "postgresql://foodflow_admin:CHANGE_ME@localhost:5432/foodflow_db"
 
 # Ingest both recipes and interaction ratings (default: --component all)
 python -m ingestion.cli ingest-foodcom --source data/raw/foodcom/
