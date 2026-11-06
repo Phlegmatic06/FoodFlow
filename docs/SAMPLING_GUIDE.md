@@ -138,6 +138,17 @@ The RecipeNLG corpus does not contain curated cuisine tags or cooking times. To 
 
 **Composite Stratum Identifier**: `{source_origin}__{ner_richness}__{directions_status}` (e.g., `Gathered__ner_4_8__directions_usable`).
 
+### 5.2 Archive Compatibility & Header Normalization
+The downloaded RecipeNLG archive (`data/raw/recipenlg/archive.zip`) packages the dataset as `RecipeNLG_dataset.csv` with a header structure originating from pandas `to_csv(index=True)`:
+```python
+['', 'title', 'ingredients', 'directions', 'link', 'source', 'NER']
+```
+To process this directly without extracting or mutating the 2.29 GB raw archive:
+1. **Dynamic Member Resolution**: `RecipeNLGSource` resolves `full_dataset.csv` queries to the internal member `RecipeNLG_dataset.csv` automatically.
+2. **Column 0 ID Recognition**: An empty header `""` or `Unnamed: 0` at index 0 is recognized as the recipe ID column when values validate as non-negative integers.
+3. **Empty Header Guard**: Empty headers at any column index $> 0$ are strictly rejected to prevent silent parsing errors.
+4. **Sequential ID & Zero Preservation**: Original integer IDs (`0` through `2231141`) are preserved verbatim. Row 0 has ID 0 (`rcp_nlg_0`) and is never shifted or substituted.
+
 ---
 
 ## 6. Proportional Quota Allocation & Reservoir Sampling

@@ -90,7 +90,7 @@ paths:
                 macro_targets_grams:
                   protein_g: 140
                   carbohydrates_g: 349
-                  fat_g: 78
+                  fat_g: 93
                 macro_ranges_percent:
                   protein:
                     min_pct: 10
@@ -104,7 +104,7 @@ paths:
                 caveats:
                   - "BMR calculated using the Mifflin-St Jeor equation (1990)."
                   - "TDEE applies physical activity level factor 1.55 (moderately active)."
-                  - "Macronutrient distributions are based on the Acceptable Macronutrient Distribution Ranges (AMDR)."
+                  - "Macronutrient target distribution is 20% protein, 50% carbohydrates, and 30% fat based on FoodFlow default macro distribution."
                 disclaimer: >-
                   These calculated estimates are provided strictly for educational and informational purposes.
                   They do not constitute medical diagnosis, clinical advice, or individualized nutritional prescription.
@@ -449,7 +449,7 @@ components:
           example: 349
         fat_g:
           type: integer
-          example: 78
+          example: 93
 
     MacroRangePercentage:
       type: object

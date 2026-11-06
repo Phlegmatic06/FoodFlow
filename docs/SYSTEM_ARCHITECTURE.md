@@ -176,6 +176,23 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA meal_planner TO foo
 CREATE ROLE foodflow_admin WITH LOGIN SUPERUSER PASSWORD 'admin_secret';
 ```
 
+### 3.2 Service Database Connection Pool & Foundation Architecture
+
+All backend services implement production-grade connection management and isolation checks via `ServiceDatabaseManager` (`services/common/database.py`):
+
+1. **Dedicated Connection Pooling**: Powered by `psycopg_pool.ConnectionPool` (psycopg 3) with configurable min/max bounds and timeout thresholds.
+2. **Administrative Credential Protection**: Connection managers strictly prohibit administrative roles (`foodflow_admin`, `postgres`). If an application service is mistakenly configured with admin credentials, readiness probes fail immediately with an explicit `Security violation` error.
+3. **Role Expectation Verification**: Each service validates that its active database session matches its configured least-privilege role (`foodflow_profile_user`, `foodflow_recipe_user`, or `foodflow_planner_user`).
+4. **Schema Probe Validation**: Readiness checks execute probe queries (`SELECT 1 FROM <schema>.<table> LIMIT 1;`) targeting service-owned tables (`usda_foods`, `recipes`, `guest_sessions`) to confirm schema permissions before declaring readiness.
+5. **Credential Masking in Logs and Status**: Sensitive credentials in connection strings are sanitized across application logs (`CredentialMaskingFilter`), error payloads, and health checks.
+
+| Service | Host Port | Database Role | Owned Schema | Readiness Probe Table |
+|---|---|---|---|---|
+| **Profile & Nutrition** | `8001` | `foodflow_profile_user` | `profile_nutrition` | `usda_foods` |
+| **Recipe & Ingredient** | `8002` | `foodflow_recipe_user` | `recipe_catalog` | `recipes` |
+| **Recommendation & Planner** | `8003` | `foodflow_planner_user` | `meal_planner` | `guest_sessions` |
+
+
 ---
 
 ## 4. Inter-Service Communication & Data Flow

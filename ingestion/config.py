@@ -188,6 +188,22 @@ def resolve_usda_collection_key(key: str) -> Optional[str]:
 # -----------------------------------------------------------------------------
 # Database Configuration & Safety
 # -----------------------------------------------------------------------------
+# Load root .env file at import time if present
+_env_file = ROOT_DIR / ".env"
+if _env_file.exists():
+    try:
+        with open(_env_file, "r", encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _v = _line.split("=", 1)
+                    _k, _v = _k.strip(), _v.strip().strip("'\"")
+                    if _k and _k not in os.environ:
+                        os.environ[_k] = _v
+    except Exception:
+        pass
+
+
 def get_database_url() -> Optional[str]:
     """Retrieve database connection URL from environment variables."""
     return os.getenv("DATABASE_URL") or os.getenv("FOODFLOW_DATABASE_URL")

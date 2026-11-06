@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foodflow-config
+  namespace: foodflow
+  labels:
+    app.kubernetes.io/name: foodflow-config
+    app.kubernetes.io/part-of: foodflow-platform
+data:
+  POSTGRES_DB: "foodflow_db"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  RECIPE_SERVICE_URL: "http://recipe-service:8002"
+  PROFILE_SERVICE_URL: "http://profile-service:8001"
+  CORS_ORIGINS: "http://localhost:5173,http://localhost"
+  PROFILE_SERVICE_PORT: "8001"
+  RECIPE_SERVICE_PORT: "8002"
+  PLANNER_SERVICE_PORT: "8003"
+

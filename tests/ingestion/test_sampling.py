@@ -857,6 +857,31 @@ class TestRecipeNLGSamplerPipeline(unittest.TestCase):
         self.assertTrue((out / "full_dataset.csv").exists())
         self.assertTrue((out / "sampling_report.json").exists())
 
+    def test_recipenlg_sampler_from_zip_with_empty_first_header_and_dataset_csv_alias(self):
+        zip_path = Path(self.test_dir) / "recipenlg_downloaded_archive.zip"
+        with zipfile.ZipFile(zip_path, "w") as z:
+            z.writestr(
+                "RecipeNLG_dataset.csv",
+                ',title,ingredients,directions,link,source,NER\n'
+                '0,"No-Bake Nut Cookies","[\'1 c. brown sugar\', \'1/2 c. milk\']","[\'Boil 1 min.\', \'Add oats.\']","https://r.com/0","Gathered","[\'brown sugar\', \'milk\']"\n'
+                '1,"Jewell Ball Chicken","[\'1 chicken\', \'1 tbsp salt\']","[\'Roast chicken.\']","https://r.com/1","Gathered","[\'chicken\', \'salt\']"\n'
+                '2,"Creamy Corn","[\'2 cans corn\', \'4 oz cream cheese\']","[\'Simmer.\']","https://r.com/2","Recipes1M","[\'corn\', \'cream cheese\']"\n'
+            )
+
+        out = Path(self.test_dir) / "out_zip_alias"
+        sampler = RecipeNLGSampler(zip_path, output_dir=out, limit=2, seed=42)
+        report = sampler.run(dry_run=False)
+
+        self.assertEqual(report.actual_sample_size, 2)
+        sampled_csv = out / "full_dataset.csv"
+        self.assertTrue(sampled_csv.exists())
+
+        # Verify that the sampled output is immediately consumable by RecipeNLGImporter dry-run
+        importer = RecipeNLGImporter(source_path=sampled_csv, dry_run=True)
+        imp_report = importer.run()
+        self.assertEqual(imp_report.status, "dry_run_passed")
+        self.assertEqual(imp_report.metrics["accepted_recipes"], 2)
+
     def test_recipenlg_sampler_report_json_accuracy(self):
         out = Path(self.test_dir) / "out_report"
         sampler = RecipeNLGSampler(self.dataset_csv, output_dir=out, limit=3, seed=42)

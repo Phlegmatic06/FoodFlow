@@ -32,18 +32,29 @@ The dataset was created and published by Michał Bień, Michał Gilski, Martyna 
 
 ## 2. Source Files & Schema Specifications
 
-The RecipeNLG archive typically unpacks into a single large CSV file: `full_dataset.csv` (~1.8 GB uncompressed, 2,231,142 records).
+The RecipeNLG archive typically unpacks into a single large CSV file.
+- **Canonical filename**: `full_dataset.csv` (~2.2 GB uncompressed, 2,231,142 records).
+- **Official archive member**: In the officially downloaded `archive.zip`, the CSV member is named `RecipeNLG_dataset.csv` (2,294,981,083 bytes uncompressed, 2,231,142 rows).
+- **Dynamic alias resolution**: `RecipeNLGSource` automatically resolves `RecipeNLG_dataset.csv` when querying `full_dataset.csv` without requiring manual extraction or renaming.
 
-### 2.1 Documented CSV Fields
-| CSV Field | Case Variations | Type | Description |
+### 2.1 Documented CSV Fields & Header Aliases
+| CSV Field | Case Variations & Aliases | Type | Description |
 | :--- | :--- | :--- | :--- |
-| `id` | `id`, `ID` | Integer | Sequential integer index starting at `0` up to `2231141`. |
+| `id` | `id`, `ID`, `""` (empty string at column 0), `Unnamed: 0` | Integer | Sequential integer index starting at `0` up to `2231141`. |
 | `title` | `title`, `Title`, `name` | String | Recipe title string. |
 | `ingredients` | `ingredients`, `Ingredients` | Stringified List | List of raw ingredient strings (e.g., `["2 cups flour", "1 tsp salt"]`). |
 | `directions` | `directions`, `Directions`, `steps` | Stringified List | List of step-by-step cooking directions. |
 | `link` | `link`, `Link`, `url` | String | Original web source URL. |
 | `source` | `source`, `Source` | String | Sub-corpus classification: `Gathered` or `Recipes1M`. |
 | `ner` | `ner`, `NER` | Stringified List | Pre-extracted named entity recognition ingredient names (e.g., `["flour", "salt"]`). |
+
+### 2.2 Pandas Index Header Normalization & Validation Rules
+Because the source dataset was exported using pandas with `index=True`, the first column header in the raw CSV is an empty string `""` (or `Unnamed: 0` in some tools).
+The ingestion validator enforces strict rules:
+1. **First-Column ID Resolution**: An empty string `""` or `Unnamed: 0` is accepted as the recipe ID **only at column index 0**, and only when its row values strictly validate as non-negative integers ($\ge 0$).
+2. **Rejection of Misplaced Empty Headers**: An empty or unnamed header at any non-first column index ($> 0$) is strictly rejected as invalid CSV formatting.
+3. **Preservation of ID Zero**: Recipe ID `0` is a valid identifier (e.g., `rcp_nlg_0`) and is never shifted, offset, or dropped.
+4. **Original ID Integrity**: Original IDs are preserved as stringified integers without modification. IDs are never substituted with row numbers or synthetic counters.
 
 ---
 

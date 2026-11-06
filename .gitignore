@@ -36,6 +36,7 @@ venv.bak/
 
 # Frontend & Node Dependencies
 node_modules/
+.vite/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -62,6 +63,7 @@ desktop.ini
 .coverage
 htmlcov/
 .pytest_cache/
+scratch/
 
 # Database dumps & backup files
 *.sql.dump

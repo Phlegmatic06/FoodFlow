@@ -195,6 +195,14 @@ def clean_text(val: Any) -> Optional[str]:
     return s if s else None
 
 
+KNOWN_RECIPENLG_CSV_BASENAMES: Tuple[str, ...] = (
+    "recipenlg_dataset.csv",
+    "full_dataset.csv",
+    "recipe_nlg.csv",
+    "recipes.csv",
+)
+
+
 # -----------------------------------------------------------------------------
 # Source Abstraction: ZIP Archive, Directory, or Direct CSV File
 # -----------------------------------------------------------------------------
@@ -245,7 +253,9 @@ class RecipeNLGSource:
         canonical = canonical_name.lower()
         if canonical in self._file_map:
             return True
-        # If any CSV is available in single-file mode
+        for candidate in KNOWN_RECIPENLG_CSV_BASENAMES:
+            if candidate in self._file_map:
+                return True
         return bool(self._file_map)
 
     def list_available_files(self) -> List[str]:
@@ -321,6 +331,10 @@ class RecipeNLGSource:
         canonical = canonical_name.lower()
         if canonical in self._file_map:
             return self._file_map[canonical]
+        for candidate in KNOWN_RECIPENLG_CSV_BASENAMES:
+            if candidate in self._file_map:
+                logger.info(f"Target '{canonical_name}' resolved to known RecipeNLG member '{candidate}'.")
+                return self._file_map[candidate]
         if self._file_map:
             # Pick first available CSV if specific name not found
             first_key = next(iter(self._file_map.keys()))

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profile-service
+  namespace: foodflow
+  labels:
+    app.kubernetes.io/name: profile-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: foodflow-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: profile-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: profile-service
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: profile-service
+          image: ghcr.io/foodflow/profile-service:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8001
+              name: http
+          env:
+            - name: PROFILE_SERVICE_HOST
+              value: "0.0.0.0"
+            - name: PROFILE_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: PROFILE_SERVICE_PORT
+            - name: PROFILE_SERVICE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: foodflow-secrets
+                  key: PROFILE_SERVICE_DATABASE_URL
+            - name: RECIPE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: RECIPE_SERVICE_URL
+            - name: CORS_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: CORS_ORIGINS
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+

@@ -150,12 +150,26 @@ FoodFlow/
 │   ├── services/                   # ClusterIP definitions
 │   └── ingress/                    # Ingress routing rules (requires cluster ingress controller)
 ├── services/
-│   ├── profile-nutrition/          # Member 1 service (FastAPI)
-│   ├── recipe-ingredient/          # Member 2 service (FastAPI)
-│   └── recommendation-planner/     # Member 3 service (FastAPI)
-├── frontend/                       # Shared React + Vite SPA
+│   ├── common/                         # Shared foundation models, DB pool, logging & errors
+│   │   ├── config.py                   # Environment loader & URL masking
+│   │   ├── database.py                 # psycopg_pool.ConnectionPool & role validator
+│   │   ├── errors.py                   # OpenAPI-compliant exception handlers
+│   │   ├── logging.py                  # Structured logging with credential sanitization
+│   │   └── models.py                   # Pydantic schemas (HealthResponse, ReadinessResponse, ErrorResponse)
+│   ├── profile_nutrition/              # Member 1 service (FastAPI, Port 8001)
+│   │   ├── config.py, database.py, main.py
+│   │   └── routers/health.py           # /health, /health/live, /health/ready
+│   ├── recipe_ingredient/              # Member 2 service (FastAPI, Port 8002)
+│   │   ├── config.py, database.py, main.py
+│   │   └── routers/health.py           # /health, /health/live, /health/ready
+│   └── recommendation_planner/         # Member 3 service (FastAPI, Port 8003)
+│       ├── config.py, database.py, dependencies.py, main.py, schemas.py
+│       ├── client.py, repository.py, matcher.py, generator.py, categorizer.py
+│       └── routers/                    # health.py, sessions.py, pantry.py, plans.py, shopping.py
+├── frontend/                           # Shared React + Vite SPA
 └── tests/
-    └── ingestion/                  # Ingestion & sampling unit test suite (115 tests)
+    ├── ingestion/                      # Ingestion & sampling unit test suite (122 tests)
+    └── services/                       # Backend service test suite (96 tests covering foundations, Recipe Service, Profile Service, and Planner Service)
 ```
 
 ### Key Architectural Note: VM Images (Glance) vs Container Images
@@ -163,10 +177,98 @@ FoodFlow/
 - **Application Container Images**: FoodFlow application container images (FastAPI microservices and React frontend) are lightweight OCI images built using Podman/Docker (`podman build`) and pushed to an OCI container registry (e.g., Docker Hub, Quay.io, or Harbor). Kubernetes pulls these OCI images to run application Pods on the worker nodes. **Application container images are not stored in Glance.**
 
 ### Local Workflow (Zero OpenStack Access Required)
-1. **Environment Configuration**: Clone the repository and configure service ports and database credentials via `.env`.
-2. **Container Orchestration**: Launch PostgreSQL and backend microservices via `podman compose up --build` (or `docker compose up --build`).
-3. **Data Ingestion**: Run the standalone Python ingestion CLI (`python -m ingestion.cli doctor`, `inspect`, `verify`, `status`) to validate environment and seed the database with a validated subset of USDA, RecipeNLG, and Food.com records.
-4. **Application Access**: Access the React interface via `http://localhost:5173` with API requests proxied internally to the corresponding backend microservices.
+1. **Environment Configuration**: Clone the repository and configure service ports and database credentials via `.env` (copied from `.env.example`).
+2. **Full-Stack Container Orchestration**: Start the complete platform (PostgreSQL 16, all 3 backend microservices, and React frontend):
+   ```bash
+   docker compose up -d
+   # or with Podman:
+   podman compose up -d
+   ```
+   Inspect container health:
+   ```bash
+   docker compose ps
+   ```
+3. **Data Ingestion**: Run the standalone Python ingestion CLI (`python -m ingestion.cli doctor`, `inspect`, `verify`, `status`) to validate environment and seed the database with development datasets.
+4. **Running Backend Services Independently**:
+   Each service can be launched locally via Uvicorn on its designated port using its restricted database role:
+   ```bash
+   # Profile & Nutrition Service (Port 8001)
+   uvicorn services.profile_nutrition.main:app --host 0.0.0.0 --port 8001 --reload
+
+   # Recipe & Ingredient Service (Port 8002)
+   uvicorn services.recipe_ingredient.main:app --host 0.0.0.0 --port 8002 --reload
+
+   # Recommendation & Meal Planner Service (Port 8003)
+   uvicorn services.recommendation_planner.main:app --host 0.0.0.0 --port 8003 --reload
+   ```
+5. **Verifying Health & Readiness**:
+   Each service exposes standard OpenAPI health probes and orchestrator readiness checks:
+   ```bash
+   # Health check (Process alive)
+   curl http://localhost:8001/health
+   curl http://localhost:8002/health
+   curl http://localhost:8003/health
+
+   # Readiness check (Database pool & restricted role schema access)
+   curl http://localhost:8001/health/ready
+   curl http://localhost:8002/health/ready
+   curl http://localhost:8003/health/ready
+   ```
+6. **Executing Test Suites**:
+   ```bash
+   # Run all backend service tests (96 tests covering foundations, Recipe Service, Profile Service, and Planner Service business APIs)
+   python -m unittest discover -s tests/services -v
+
+   # Run dedicated Recommendation & Meal Planner Service test suite (26 tests)
+   python -m unittest tests/services/test_planner_service.py -v
+
+   # Run dedicated Profile & Nutrition Service test suite (20 tests)
+   python -m unittest tests/services/test_profile_service.py -v
+
+   # Run dedicated Recipe Service test suite (28 tests)
+   python -m unittest tests/services/test_recipe_service.py -v
+
+   # Run backend service foundations test suite (22 tests)
+   python -m unittest tests/services/test_service_foundations.py -v
+
+   # Run ingestion & sampling test suite (122 tests)
+   python -m unittest discover -s tests/ingestion -v
+   ```
+7. **Profile & Nutrition Service Endpoints (Port 8001)**:
+   - `GET /health` & `GET /health/live`: Service health probes
+   - `GET /health/ready`: Database readiness check with `foodflow_profile_user` role
+   - `POST /api/v1/biometrics/calculate`: Stateless calculation of BMI, BMR (Mifflin-St Jeor), TDEE, goal caloric target (maintain: 0, lose: -400, gain: +400 with 1,200 kcal floor), and FoodFlow default macro distribution (20% protein, 50% carbohydrates, 30% fat = 100% total) without DB persistence. When `sex_for_equation` is omitted, returns BMI and category only without fabricating metabolic rates.
+   - `GET /api/v1/nutrition/foods/search`: Paginated search across USDA FoodData Central items with ILIKE / trigram matching and data type filtering
+   - `GET /api/v1/nutrition/foods/{fdc_id}`: Complete USDA food nutrient measurements per 100g and household portions
+   - `POST /api/v1/nutrition/recipes/estimate`: Ingredient-level nutritional calculation based on USDA tables, returning `calculated` ($\ge 80\%$), `partial` ($>0\%$), or `uncalculated` ($0\%$) status without fabricating missing values
+   - `GET /api/v1/nutrition/recipes/{recipe_id}`: Retrieves cached recipe nutrition profile from `profile_nutrition.nutrition_estimates`
+8. **Recipe & Ingredient Service Endpoints (Port 8002)**:
+   - `GET /health` & `GET /health/live`: Service health probes
+   - `GET /health/ready`: Database readiness check with `foodflow_recipe_user` role
+   - `GET /api/v1/recipes/search`: Search catalogue with full-text `q`, `cuisine`, `tag`, `diet`, `max_time`, `source_dataset`, and `sort`
+   - `GET /api/v1/recipes/{recipe_id}`: Full recipe detail with ordered ingredients, steps, tags, ratings, and raw nutrition (%DV)
+   - `POST /api/v1/recipes/batch`: High-throughput batch recipe retrieval (up to 100 IDs) for internal orchestration
+   - `POST /api/v1/recipes/search-by-ingredients`: Candidate recipe matching by canonical ingredient IDs
+   - `POST /api/v1/ingredients/normalize`: Maps raw ingredient text to canonical taxonomy (graceful handling of empty dictionaries)
+   - `GET /api/v1/ingredients/suggestions`: Autocomplete search for canonical ingredients
+9. **Recommendation & Meal Planner Service Endpoints (Port 8003)**:
+   - `GET /health` & `GET /health/live`: Service health probes
+   - `GET /health/ready`: Database readiness check with `foodflow_planner_user` role
+   - `POST /api/v1/guest-sessions`: Creates an anonymous 30-day UUID guest session
+   - `GET /api/v1/guest-sessions/{session_id}`: Verifies guest session existence, active status, and updates `last_active_at`
+   - `GET /api/v1/pantry`: Retrieves active pantry inventory for the current guest session (`X-Guest-Session-ID`)
+   - `PUT /api/v1/pantry`: Replaces/clears pantry items; normalizes via Recipe Service or gracefully preserves raw text
+   - `POST /api/v1/pantry/match`: Matches pantry inventory against recipe catalogue by ingredient overlap percentage
+   - `POST /api/v1/meal-plans/generate`: Stateless multi-day meal schedule proposal matching caloric/macro targets and dietary restrictions without database persistence
+   - `POST /api/v1/meal-plans`: Persists a meal plan schedule and slots after validating recipe existence via Recipe Service
+   - `GET /api/v1/meal-plans/{plan_id}`: Retrieves meal plan details, ordered slots, and cooking progress
+   - `PUT /api/v1/meal-plans/{plan_id}`: Replaces meal plan schedule slots and targets
+   - `DELETE /api/v1/meal-plans/{plan_id}`: Deletes a meal plan (cascades to slots and shopping list)
+   - `PATCH /api/v1/meal-plans/{plan_id}/progress`: Batch updates slot cooking progress (`pending`, `cooked`, `skipped`)
+   - `GET /api/v1/meal-plans/{plan_id}/shopping-list`: Retrieves or generates consolidated grocery checklist grouped by supermarket category (`Produce`, `Dairy & Refrigerated`, `Meat & Seafood`, `Pantry & Dry Goods`, `Bakery & Grains`, `Spices & Seasonings`, `Other`)
+   - `PATCH /api/v1/meal-plans/{plan_id}/shopping-list/items/{item_id}`: Toggles shopping list item checked/procurement status
+10. **Application Access**: Access the React interface via `http://localhost:5173` with API requests proxied internally to the corresponding backend microservices.
+
 
 ---
 

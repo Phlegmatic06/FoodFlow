@@ -1,0 +1,150 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: foodflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-foodflow_db}
+      POSTGRES_USER: ${BOOTSTRAP_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${BOOTSTRAP_POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - foodflow-db-data:/var/lib/postgresql/data
+      - ./database:/database:ro
+    networks:
+      - foodflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BOOTSTRAP_POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-foodflow_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  profile-service:
+    build:
+      context: .
+      dockerfile: services/profile_nutrition/Dockerfile
+    container_name: foodflow-profile-service
+    restart: unless-stopped
+    environment:
+      - PROFILE_SERVICE_HOST=0.0.0.0
+      - PROFILE_SERVICE_PORT=8001
+      - PROFILE_SERVICE_DATABASE_URL=postgresql://foodflow_profile_user:${FOODFLOW_PROFILE_PASSWORD:-ChangeMeProfilePassword!}@postgres:5432/${POSTGRES_DB:-foodflow_db}
+      - RECIPE_SERVICE_URL=http://recipe-service:8002
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "8001:8001"
+    networks:
+      foodflow-net:
+        aliases:
+          - profile-service
+          - profile-nutrition
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  recipe-service:
+    build:
+      context: .
+      dockerfile: services/recipe_ingredient/Dockerfile
+    container_name: foodflow-recipe-service
+    restart: unless-stopped
+    environment:
+      - RECIPE_SERVICE_HOST=0.0.0.0
+      - RECIPE_SERVICE_PORT=8002
+      - RECIPE_SERVICE_DATABASE_URL=postgresql://foodflow_recipe_user:${FOODFLOW_RECIPE_PASSWORD:-ChangeMeRecipePassword!}@postgres:5432/${POSTGRES_DB:-foodflow_db}
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "8002:8002"
+    networks:
+      foodflow-net:
+        aliases:
+          - recipe-service
+          - recipe-ingredient
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  planner-service:
+    build:
+      context: .
+      dockerfile: services/recommendation_planner/Dockerfile
+    container_name: foodflow-planner-service
+    restart: unless-stopped
+    environment:
+      - PLANNER_SERVICE_HOST=0.0.0.0
+      - PLANNER_SERVICE_PORT=8003
+      - PLANNER_SERVICE_DATABASE_URL=postgresql://foodflow_planner_user:${FOODFLOW_PLANNER_PASSWORD:-ChangeMePlannerPassword!}@postgres:5432/${POSTGRES_DB:-foodflow_db}
+      - RECIPE_SERVICE_URL=http://recipe-service:8002
+      - PROFILE_SERVICE_URL=http://profile-service:8001
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "8003:8003"
+    networks:
+      foodflow-net:
+        aliases:
+          - planner-service
+          - recommendation-planner
+    depends_on:
+      postgres:
+        condition: service_healthy
+      recipe-service:
+        condition: service_healthy
+      profile-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_PROFILE_SERVICE_URL=http://localhost:8001
+        - VITE_RECIPE_SERVICE_URL=http://localhost:8002
+        - VITE_PLANNER_SERVICE_URL=http://localhost:8003
+    container_name: foodflow-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    networks:
+      - foodflow-net
+    depends_on:
+      profile-service:
+        condition: service_healthy
+      recipe-service:
+        condition: service_healthy
+      planner-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  foodflow-db-data:
+    name: foodflow-db-data
+
+networks:
+  foodflow-net:
+    name: foodflow-net
+    driver: bridge

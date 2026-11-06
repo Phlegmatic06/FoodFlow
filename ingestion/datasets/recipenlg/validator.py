@@ -18,8 +18,9 @@ from ingestion.datasets.recipenlg.parser import (
 )
 
 
-REQUIRED_RECIPENLG_HEADERS = {"id", "title", "ingredients", "directions", "link", "source"}
+REQUIRED_RECIPENLG_HEADERS = {"title", "ingredients", "directions", "link", "source"}
 OPTIONAL_RECIPENLG_HEADERS = {"ner"}
+ALLOWED_FIRST_COLUMN_ID_HEADERS = {"id", "", "unnamed: 0"}
 
 
 class RecipeNLGValidationError(Exception):
@@ -59,10 +60,87 @@ class ValidatedRecipeNLG:
 
 
 def validate_headers(actual_headers: List[str]) -> Tuple[bool, List[str]]:
-    """Verify that all required RecipeNLG headers exist, supporting case variations."""
-    actual_set = {h.strip().lower() for h in actual_headers}
+    """Verify that all required RecipeNLG headers exist, supporting case variations
+    and standard pandas index exports.
+    
+    Rules:
+      1. Mandatory content headers: 'title', 'ingredients', 'directions', 'link', 'source'.
+      2. ID header:
+         - Explicit 'id' column anywhere in the header list (case-insensitive).
+         - OR the FIRST column (index 0) has an empty header '' or 'Unnamed: 0'.
+      3. An empty header in any non-first column (index > 0) is strictly invalid and rejected.
+    """
+    if not actual_headers:
+        return False, ["empty_header_list"]
+
+    # Check for empty headers or 'unnamed: 0' in non-first columns
+    for idx, h in enumerate(actual_headers):
+        if idx > 0:
+            stripped = h.strip() if h is not None else ""
+            if stripped == "":
+                return False, [f"invalid_empty_header_at_column_{idx}"]
+            if stripped.lower() == "unnamed: 0":
+                return False, [f"invalid_unnamed_header_at_column_{idx}"]
+
+    norm_headers = [h.strip().lower() if h is not None else "" for h in actual_headers]
+    has_id = False
+    if "id" in norm_headers:
+        has_id = True
+    elif norm_headers[0] in ("", "unnamed: 0"):
+        has_id = True
+
+    actual_set = set(norm_headers)
     missing = sorted(list(REQUIRED_RECIPENLG_HEADERS - actual_set))
+    if not has_id:
+        missing.append("id")
+        missing.sort()
+
     return len(missing) == 0, missing
+
+
+def _extract_recipe_id(row: Dict[str, str], line_number: int) -> str:
+    """Extract and validate the recipe ID from a row dictionary.
+    
+    Supports:
+      1. Named 'id' column (case-insensitive) anywhere in row.
+      2. First-column empty string '' (pandas index=True export).
+      3. First-column 'Unnamed: 0' (case-insensitive).
+      
+    Rules:
+      - Only treat an empty or unnamed column as the ID when it is the FIRST column
+        in the row and its value parses as a non-negative integer.
+      - Reject empty or unnamed headers in arbitrary/non-first columns.
+      - Preserve original ID exactly as integer string (e.g. '0', '1', '2231141').
+      - Do not shift IDs or invent replacement IDs.
+    """
+    raw_id: Optional[str] = None
+
+    # Priority 1: Named 'id' column anywhere in keys
+    for k, v in row.items():
+        if k and k.strip().lower() == "id":
+            raw_id = clean_text(v)
+            break
+
+    # Priority 2: First-column empty string or Unnamed: 0
+    if raw_id is None:
+        keys = list(row.keys())
+        if keys:
+            first_key = keys[0]
+            norm_first = first_key.strip().lower() if first_key is not None else ""
+            if norm_first in ("", "unnamed: 0"):
+                raw_id = clean_text(row[first_key])
+
+    if raw_id is None:
+        raise RecipeNLGValidationError(line_number, "Missing mandatory recipe id", "id")
+
+    try:
+        int_id = int(float(raw_id))
+        if int_id < 0:
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise RecipeNLGValidationError(line_number, f"Invalid recipe id: {raw_id!r}", "id")
+
+    return str(int_id)
 
 
 def _lookup_field(row: Dict[str, str], *candidate_names: str) -> Optional[str]:
@@ -70,7 +148,7 @@ def _lookup_field(row: Dict[str, str], *candidate_names: str) -> Optional[str]:
     for cand in candidate_names:
         cand_lower = cand.lower()
         for k, v in row.items():
-            if k.strip().lower() == cand_lower:
+            if k and k.strip().lower() == cand_lower:
                 return v
     return None
 
@@ -91,18 +169,7 @@ def validate_recipe_record(
       6. source: Normalized to 'Gathered', 'Recipes1M', or raw value.
     """
     # 1. Recipe ID
-    raw_id = clean_text(_lookup_field(row, "id"))
-    if raw_id is None:
-        raise RecipeNLGValidationError(line_number, "Missing mandatory recipe id", "id")
-
-    try:
-        int_id = int(float(raw_id))
-        if int_id < 0:
-            raise ValueError()
-    except (ValueError, TypeError):
-        raise RecipeNLGValidationError(line_number, f"Invalid recipe id: {raw_id!r}", "id")
-
-    source_id = str(int_id)
+    source_id = _extract_recipe_id(row, line_number)
     if seen_ids is not None:
         if source_id in seen_ids:
             raise DuplicateRecipeIDError(line_number, source_id)

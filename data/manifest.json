@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "created_at": "2026-11-03T11:04:25.572339+00:00",
-  "last_updated": "2026-11-03T11:04:25.572525+00:00",
+  "last_updated": "2026-11-05T08:51:30.460372+00:00",
   "datasets": {
     "usda": {
       "dataset_id": "usda_fdc",
@@ -17,11 +17,31 @@
         "food_portion.csv"
       ],
       "source_version": "SR Legacy & Foundation Foods",
-      "download_date": null,
-      "import_status": "not_downloaded",
-      "files": {},
-      "imported_row_counts": {},
-      "last_successful_ingestion": null,
+      "download_date": "2026-11-04T18:24:07.916510+00:00",
+      "import_status": "partially_imported",
+      "files": {
+        "FoodData_Central_foundation_food_csv_2026-10-29.zip": {
+          "file_name": "FoodData_Central_foundation_food_csv_2026-10-29.zip",
+          "size_bytes": 1127612,
+          "sha256_checksum": "e396b1ffc3ea05d1bdccbcddbfd2a4fcb42f64d37fabdacdd9c35158c4ced817",
+          "last_modified": "2026-11-04T18:03:02+00:00",
+          "original_row_count": 424
+        },
+        "FoodData_Central_sr_legacy_food_csv_2018-04.zip": {
+          "file_name": "FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+          "size_bytes": 6074592,
+          "sha256_checksum": "b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0",
+          "last_modified": "2026-11-04T18:03:40+00:00",
+          "original_row_count": 7793
+        }
+      },
+      "imported_row_counts": {
+        "usda_foods": 7793,
+        "usda_nutrients": 474,
+        "usda_food_nutrients": 644125,
+        "usda_food_portions": 14449
+      },
+      "last_successful_ingestion": "2026-11-04T19:40:26.183629+00:00",
       "failure_record": null,
       "collections": {
         "foundation": {
@@ -30,8 +50,16 @@
           "release_date": "October 2026",
           "source_url": "https://fdc.nal.usda.gov/download-datasets/",
           "download_date": null,
-          "import_status": "not_downloaded",
-          "files": {},
+          "import_status": "downloaded",
+          "files": {
+            "FoodData_Central_foundation_food_csv_2026-10-29.zip": {
+              "file_name": "FoodData_Central_foundation_food_csv_2026-10-29.zip",
+              "size_bytes": 1127612,
+              "sha256_checksum": "e396b1ffc3ea05d1bdccbcddbfd2a4fcb42f64d37fabdacdd9c35158c4ced817",
+              "last_modified": "2026-11-04T18:03:02+00:00",
+              "original_row_count": 424
+            }
+          },
           "imported_row_counts": {},
           "rejected_counts": {},
           "last_successful_ingestion": null,
@@ -43,11 +71,29 @@
           "release_date": "April 2018",
           "source_url": "https://fdc.nal.usda.gov/download-datasets/",
           "download_date": null,
-          "import_status": "not_downloaded",
-          "files": {},
-          "imported_row_counts": {},
-          "rejected_counts": {},
-          "last_successful_ingestion": null,
+          "import_status": "completed",
+          "files": {
+            "FoodData_Central_sr_legacy_food_csv_2018-04.zip": {
+              "file_name": "FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+              "size_bytes": 6074592,
+              "sha256_checksum": "b80817294b8850530aaedf2e515c02593b1824f763a0ff356e5c2081643e6fd0",
+              "last_modified": "2026-11-04T18:03:40+00:00",
+              "original_row_count": 7793
+            }
+          },
+          "imported_row_counts": {
+            "usda_foods": 7793,
+            "usda_nutrients": 474,
+            "usda_food_nutrients": 644125,
+            "usda_food_portions": 14449
+          },
+          "rejected_counts": {
+            "food.csv": 0,
+            "nutrient.csv": 0,
+            "food_nutrient.csv": 0,
+            "food_portion.csv": 0
+          },
+          "last_successful_ingestion": "2026-11-04T19:40:26.183622+00:00",
           "failure_record": null
         }
       },
@@ -65,11 +111,26 @@
         "RAW_interactions.csv"
       ],
       "source_version": "Kaggle/BERD 2019 Snapshot",
-      "download_date": null,
-      "import_status": "not_downloaded",
-      "files": {},
-      "imported_row_counts": {},
-      "last_successful_ingestion": null,
+      "download_date": "2026-11-04T18:24:07.916510+00:00",
+      "import_status": "completed",
+      "files": {
+        "archive.zip": {
+          "file_name": "archive.zip",
+          "size_bytes": 280350373,
+          "sha256_checksum": "e7a43e623c616799f78a0479b550483450fd7ede4e0c40979db3458a82b5b913",
+          "last_modified": "2026-11-04T18:04:14+00:00",
+          "original_row_count": 1364004
+        }
+      },
+      "imported_row_counts": {
+        "recipes": 25000,
+        "recipe_ingredients": 226351,
+        "recipe_instructions": 244511,
+        "recipe_tags": 445140,
+        "recipe_nutrition_raw": 25000,
+        "recipe_ratings": 24431
+      },
+      "last_successful_ingestion": "2026-11-05T07:53:37.869953+00:00",
       "failure_record": null,
       "collections": {},
       "notes": "Provides rich metadata, 7-element %DV nutrition, tags, and user ratings."
@@ -82,17 +143,37 @@
       "license_notes": "Non-commercial research and educational usage agreement",
       "reference_citation": "Bień, M., Gilski, M., Maciejewska, M., Taisner, W., Wisniewski, D., & Lawrynowicz, A. (2020). RecipeNLG: A Large Scale Dataset for Recipe Generation and Evaluation.",
       "expected_files": [
-        "full_dataset.csv"
+        "full_dataset.csv",
+        "RecipeNLG_dataset.csv"
       ],
       "source_version": "1.0.0",
-      "download_date": null,
-      "import_status": "not_downloaded",
-      "files": {},
-      "imported_row_counts": {},
-      "last_successful_ingestion": null,
+      "download_date": "2026-11-04T18:24:07.916510+00:00",
+      "import_status": "completed",
+      "files": {
+        "archive.zip": {
+          "file_name": "archive.zip",
+          "size_bytes": 674293182,
+          "sha256_checksum": "b0b3e6570ef246dab48bc2e2ad6dfc68b753c1dcdeb174cd3e5bd88f63b48e50",
+          "last_modified": "2026-11-04T18:04:46+00:00",
+          "original_row_count": 2231142
+        },
+        "RecipeNLG_dataset.csv": {
+          "file_name": "RecipeNLG_dataset.csv",
+          "size_bytes": 2294981083,
+          "sha256_checksum": null,
+          "last_modified": "2026-11-04T18:04:46+00:00",
+          "original_row_count": 2231142
+        }
+      },
+      "imported_row_counts": {
+        "recipes": 25000,
+        "recipe_ingredients": 217404,
+        "recipe_instructions": 162902
+      },
+      "last_successful_ingestion": "2026-11-05T08:51:30.460014+00:00",
       "failure_record": null,
       "collections": {},
-      "notes": "High-volume corpus (~2.23M recipes) with pre-extracted NER ingredient tokens."
+      "notes": "High-volume corpus (~2.23M recipes) with pre-extracted NER ingredient tokens. Downloaded archive contains 'RecipeNLG_dataset.csv' with pandas index header ('') mapping to recipe ID, dynamically aliased to canonical 'full_dataset.csv'."
     }
   }
 }

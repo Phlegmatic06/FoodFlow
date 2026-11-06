@@ -151,6 +151,43 @@ class TestRecipeNLGValidator(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("title", missing)
 
+    def test_header_validation_pandas_index_and_unnamed(self):
+        # Empty string as first header (standard pandas index=True)
+        headers_empty_first = ["", "title", "ingredients", "directions", "link", "source", "ner"]
+        ok, missing = validate_headers(headers_empty_first)
+        self.assertTrue(ok)
+        self.assertEqual(missing, [])
+
+        # 'Unnamed: 0' as first header
+        headers_unnamed_first = ["Unnamed: 0", "title", "ingredients", "directions", "link", "source", "NER"]
+        ok, missing = validate_headers(headers_unnamed_first)
+        self.assertTrue(ok)
+        self.assertEqual(missing, [])
+
+    def test_header_validation_rejects_empty_or_unnamed_in_non_first_columns(self):
+        # Empty header in column index 1
+        headers_empty_col1 = ["id", "", "ingredients", "directions", "link", "source"]
+        ok, missing = validate_headers(headers_empty_col1)
+        self.assertFalse(ok)
+        self.assertEqual(missing, ["invalid_empty_header_at_column_1"])
+
+        # Empty header in non-first column with empty index 0
+        headers_empty_col2 = ["", "title", "", "directions", "link", "source"]
+        ok, missing = validate_headers(headers_empty_col2)
+        self.assertFalse(ok)
+        self.assertEqual(missing, ["invalid_empty_header_at_column_2"])
+
+        # Unnamed in column index 2
+        headers_unnamed_col2 = ["id", "title", "Unnamed: 0", "directions", "link", "source"]
+        ok, missing = validate_headers(headers_unnamed_col2)
+        self.assertFalse(ok)
+        self.assertEqual(missing, ["invalid_unnamed_header_at_column_2"])
+
+        # Empty header list
+        ok, missing = validate_headers([])
+        self.assertFalse(ok)
+        self.assertEqual(missing, ["empty_header_list"])
+
     def test_validate_recipe_record_standard(self):
         row = {
             "id": "108294",
@@ -278,6 +315,110 @@ class TestRecipeNLGValidator(unittest.TestCase):
             rec = validate_recipe_record(dict(base_row, source=val), line_number=4)
             self.assertIsNone(rec.source_origin)
 
+    def test_validate_recipe_record_empty_first_column_pandas_index(self):
+        # Empty first column key '' with integer ID 0
+        row_id_0 = {
+            "": "0",
+            "title": "No-Bake Cookies",
+            "ingredients": '["oats", "peanut butter"]',
+            "directions": '["mix", "chill"]',
+            "link": "https://recipes.com/0",
+            "source": "Gathered",
+            "ner": '["oats", "peanut butter"]',
+        }
+        rec0 = validate_recipe_record(row_id_0, line_number=2)
+        self.assertEqual(rec0.id, "rcp_nlg_0")
+        self.assertEqual(rec0.source_id, "0")
+        self.assertEqual(rec0.title, "No-Bake Cookies")
+
+        # Large integer ID in empty first column
+        row_large = {
+            "": "2231141",
+            "title": "Grand Final Recipe",
+            "ingredients": '["flour", "water"]',
+            "directions": '["bake"]',
+            "link": "",
+            "source": "Recipes1M",
+        }
+        rec_large = validate_recipe_record(row_large, line_number=2231143)
+        self.assertEqual(rec_large.id, "rcp_nlg_2231141")
+        self.assertEqual(rec_large.source_id, "2231141")
+
+    def test_validate_recipe_record_unnamed_zero_header(self):
+        row = {
+            "Unnamed: 0": "42",
+            "title": "Hitchhiker Stew",
+            "ingredients": '["tea", "biscuits"]',
+            "directions": '["dunk"]',
+            "link": "",
+            "source": "Gathered",
+        }
+        rec = validate_recipe_record(row, line_number=5)
+        self.assertEqual(rec.id, "rcp_nlg_42")
+        self.assertEqual(rec.source_id, "42")
+
+    def test_validate_recipe_record_empty_header_validation_errors(self):
+        # Non-integer value in empty first column
+        bad_val_row = {
+            "": "not_a_number",
+            "title": "Bad ID Recipe",
+            "ingredients": '["flour"]',
+            "directions": '["bake"]',
+            "link": "",
+            "source": "Gathered",
+        }
+        with self.assertRaises(RecipeNLGValidationError):
+            validate_recipe_record(bad_val_row, line_number=10)
+
+        # Negative ID in empty first column
+        neg_val_row = {
+            "": "-10",
+            "title": "Neg ID Recipe",
+            "ingredients": '["flour"]',
+            "directions": '["bake"]',
+            "link": "",
+            "source": "Gathered",
+        }
+        with self.assertRaises(RecipeNLGValidationError):
+            validate_recipe_record(neg_val_row, line_number=11)
+
+        # Empty string ID in empty first column
+        empty_val_row = {
+            "": "",
+            "title": "Empty ID Recipe",
+            "ingredients": '["flour"]',
+            "directions": '["bake"]',
+            "link": "",
+            "source": "Gathered",
+        }
+        with self.assertRaises(RecipeNLGValidationError):
+            validate_recipe_record(empty_val_row, line_number=12)
+
+        # Empty key in non-first column without an 'id' column
+        non_first_empty_key = {
+            "title": "Misplaced Empty Key Recipe",
+            "": "100",
+            "ingredients": '["flour"]',
+            "directions": '["bake"]',
+            "link": "",
+            "source": "Gathered",
+        }
+        with self.assertRaises(RecipeNLGValidationError):
+            validate_recipe_record(non_first_empty_key, line_number=13)
+
+        # Duplicate ID with empty header column
+        seen_ids = {"0", "1"}
+        dup_row = {
+            "": "0",
+            "title": "Duplicate Zero",
+            "ingredients": '["flour"]',
+            "directions": '["bake"]',
+            "link": "",
+            "source": "Gathered",
+        }
+        with self.assertRaises(DuplicateRecipeIDError):
+            validate_recipe_record(dup_row, line_number=14, seen_ids=seen_ids)
+
 
 class TestRecipeNLGSourceAndZipHandling(unittest.TestCase):
     """Test streaming file reader for uncompressed directories, direct CSV, and ZIP archives."""
@@ -321,6 +462,33 @@ class TestRecipeNLGSourceAndZipHandling(unittest.TestCase):
             rows = list(source.open_csv_stream())
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0][1]["title"], "Apple Pie")
+
+    def test_zip_source_with_recipenlg_dataset_csv_alias(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zip_path = Path(tmp_dir) / "archive.zip"
+            with zipfile.ZipFile(zip_path, "w") as zf:
+                zf.writestr(
+                    "RecipeNLG_dataset.csv",
+                    ',title,ingredients,directions,link,source,NER\n'
+                    '0,"No-Bake Nut Cookies","[\'1 c. firmly packed brown sugar\']","[\'In heavy saucepan, combine brown sugar...\']","https://recipes.com/0","Gathered","[\'brown sugar\']"\n'
+                )
+
+            source = RecipeNLGSource(zip_path)
+            self.assertTrue(source.is_zip)
+            # Both canonical 'full_dataset.csv' and actual member 'RecipeNLG_dataset.csv' resolve
+            self.assertTrue(source.has_file("full_dataset.csv"))
+            self.assertTrue(source.has_file("RecipeNLG_dataset.csv"))
+
+            headers = source.inspect_headers("full_dataset.csv")
+            self.assertEqual(headers[0], "")
+            self.assertEqual(headers[1], "title")
+
+            rows = list(source.open_csv_stream("full_dataset.csv"))
+            self.assertEqual(len(rows), 1)
+            line_num, row = rows[0]
+            self.assertEqual(line_num, 2)
+            self.assertEqual(row[""], "0")
+            self.assertEqual(row["title"], "No-Bake Nut Cookies")
 
     def test_missing_file_raises_error(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

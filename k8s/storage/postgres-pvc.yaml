@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: foodflow
+  labels:
+    app.kubernetes.io/name: postgres-pvc
+    app.kubernetes.io/part-of: foodflow-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: cinder-csi
+

@@ -51,6 +51,8 @@ from ingestion.manifest import (
 from ingestion.utils.checksums import compute_file_sha256, format_bytes, get_file_metadata
 from ingestion.utils.csv_utils import count_csv_rows, inspect_csv_header
 from ingestion.sampling import FoodComSampler, RecipeNLGSampler
+from ingestion.taxonomy.seeder import TaxonomySeeder
+from ingestion.taxonomy.validator import TaxonomyValidationError
 
 
 logger = get_logger("cli")
@@ -604,6 +606,64 @@ def cmd_sample(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_seed_ingredient_taxonomy(args: argparse.Namespace) -> int:
+    """Validate canonical taxonomy seed, generate reports, and link recipe ingredients."""
+    source_dir = Path(args.source).resolve()
+    print("=" * 80)
+    print("FoodFlow Canonical Ingredient Taxonomy Seeder & Recipe Linking")
+    print("=" * 80)
+    print(f"Source Audit Directory: {source_dir}")
+    print(f"Execution Mode:         {'DRY RUN (simulation only)' if args.dry_run else 'LIVE APPLY (modifies database)'}")
+
+    try:
+        seeder = TaxonomySeeder(source_audit_dir=source_dir)
+        print("\n1. Validating canonical seed definitions...")
+        seeder.validate()
+        print("   [OK] Canonical definitions, categories, and synonym constraints valid.")
+
+        print("\n2. Generating reviewable audit artifacts...")
+        artifacts = seeder.generate_seed_artifacts(output_dir=source_dir)
+        for name, path in artifacts.items():
+            print(f"   [OK] {name}: {path}")
+
+        print(f"\n3. Executing {'dry-run simulation' if args.dry_run else 'database population and linking'}...")
+        stats = seeder.seed(dry_run=args.dry_run)
+
+        print("\n" + "=" * 80)
+        print("Taxonomy Seeding & Ingredient Linking Summary")
+        print("=" * 80)
+        print(f"Mode:                                {stats['mode'].upper()}")
+        print(f"Seed Version:                        {stats['seed_version']}")
+        print(f"Canonical Ingredients Seeded:        {stats['canonical_inserted']:,}")
+        print(f"Approved Synonyms Seeded:            {stats['synonyms_inserted']:,}")
+        print(f"Recipe Ingredients Linked:           {stats['recipe_ingredients_linked']:,}")
+        print(f"Recipe Ingredients Remaining NULL:   {stats['recipe_ingredients_remaining_null']:,}")
+        print(f"Total Recipe Ingredients:            {stats['total_recipe_ingredients']:,}")
+        pct_linked = (
+            (stats['recipe_ingredients_linked'] / stats['total_recipe_ingredients'] * 100)
+            if stats['total_recipe_ingredients'] > 0 else 0.0
+        )
+        print(f"Coverage of Linked Ingredients:      {pct_linked:.2f}%")
+        print(f"Elapsed Time:                        {stats['elapsed_seconds']}s")
+        print("=" * 80)
+
+        if args.dry_run:
+            print("\n[INFO] Dry run completed successfully. No changes were committed to the database.")
+        else:
+            print("\n[SUCCESS] Live seeding and recipe ingredient linking committed successfully.")
+        return 0
+
+    except TaxonomyValidationError as e:
+        print(f"\n[ERROR] Taxonomy Validation Failed: {e}", file=sys.stderr)
+        return 1
+    except DatabaseConnectionError as e:
+        print(f"\n[ERROR] Database Error: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"\n[ERROR] Seeding Failed: {e}", file=sys.stderr)
+        return 1
+
+
 # -----------------------------------------------------------------------------
 # Main Entry Point
 # -----------------------------------------------------------------------------
@@ -826,6 +886,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Execute stratum profiling and quota allocation without writing output files.",
     )
 
+    # 9. seed-ingredient-taxonomy
+    seed_parser = subparsers.add_parser(
+        "seed-ingredient-taxonomy",
+        help="Validate canonical taxonomy seed, generate reports, and link recipe ingredients.",
+    )
+    seed_parser.add_argument(
+        "--source",
+        "-s",
+        default="data/processed/reports/ingredient_taxonomy_audit",
+        help="Directory containing Step 04.5B-1 ingredient audit artifacts (default: data/processed/reports/ingredient_taxonomy_audit).",
+    )
+    seed_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Validate definitions, preview linking, and simulate seeding without committing changes.",
+    )
+
     return parser
 
 
@@ -862,6 +940,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_ingest_recipenlg(args)
     elif args.command == "sample":
         return cmd_sample(args)
+    elif args.command == "seed-ingredient-taxonomy":
+        return cmd_seed_ingredient_taxonomy(args)
     else:
         parser.print_help()
         return 1

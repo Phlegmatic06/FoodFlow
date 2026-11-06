@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planner-service
+  namespace: foodflow
+  labels:
+    app.kubernetes.io/name: planner-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: foodflow-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: planner-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: planner-service
+        app.kubernetes.io/component: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: planner-service
+          image: ghcr.io/foodflow/planner-service:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8003
+              name: http
+          env:
+            - name: PLANNER_SERVICE_HOST
+              value: "0.0.0.0"
+            - name: PLANNER_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: PLANNER_SERVICE_PORT
+            - name: PLANNER_SERVICE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: foodflow-secrets
+                  key: PLANNER_SERVICE_DATABASE_URL
+            - name: RECIPE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: RECIPE_SERVICE_URL
+            - name: PROFILE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: PROFILE_SERVICE_URL
+            - name: CORS_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: foodflow-config
+                  key: CORS_ORIGINS
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+

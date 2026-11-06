@@ -1,0 +1,32 @@
+# Version control
+.git
+.gitignore
+
+# Python virtual environment and bytecode
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+
+# Node & Frontend
+node_modules
+.vite
+frontend/node_modules
+frontend/dist
+
+# Raw datasets, large caches & temporary outputs
+data/raw
+data/samples
+data/reports
+*.csv
+*.zip
+
+# Local environment & scratch files
+.env
+.DS_Store
+Thumbs.db
+
