@@ -1,4 +1,4 @@
-"""FoodFlow Unified Sampling Engine - Audit Report Generator
+"""NutriPod Unified Sampling Engine - Audit Report Generator
 
 Produces comprehensive JSON audit reports and console summaries documenting
 sampling provenance, stratum allocations, rejection rates, output file checksums,
@@ -91,7 +91,7 @@ class SamplingReport:
         """Format and print an executive summary to standard output."""
         print("\n" + "=" * 78)
         mode_tag = "[DRY-RUN] " if self.dry_run else ""
-        print(f"FOODFLOW DATASET SAMPLING REPORT: {mode_tag}{self.dataset.upper()}")
+        print(f"NUTRIPOD DATASET SAMPLING REPORT: {mode_tag}{self.dataset.upper()}")
         print("=" * 78)
         print(f"Source Path:        {self.source_path}")
         if self.source_sha256:

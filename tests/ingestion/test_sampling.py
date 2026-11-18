@@ -1,4 +1,4 @@
-"""Comprehensive Unit Tests for FoodFlow Unified Dataset Sampling Engine (Step 03.5)
+"""Comprehensive Unit Tests for NutriPod Unified Dataset Sampling Engine (Step 03.5)
 
 Tests:
   - Base sampling primitives (proportional quotas, reservoir sampling, determinism).

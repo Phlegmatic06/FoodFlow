@@ -490,10 +490,10 @@ A critical conceptual distinction in cloud and container architecture is the dif
 
 > [!NOTE]
 > The authoritative, full-parameter OpenAPI 3.1 specifications covering all 27 microservice operations are maintained in:
-> - [`contracts/openapi/profile-service.yaml`](file:///c:/Code/FoodFlow/contracts/openapi/profile-service.yaml) (Member 1, Port 8001)
-> - [`contracts/openapi/recipe-service.yaml`](file:///c:/Code/FoodFlow/contracts/openapi/recipe-service.yaml) (Member 2, Port 8002)
-> - [`contracts/openapi/planner-service.yaml`](file:///c:/Code/FoodFlow/contracts/openapi/planner-service.yaml) (Member 3, Port 8003)
-> Complete endpoint documentation, error envelopes, and end-to-end integration workflows are detailed in [`docs/API_CONTRACTS.md`](file:///c:/Code/FoodFlow/docs/API_CONTRACTS.md).
+> - [`contracts/openapi/profile-service.yaml`](../contracts/openapi/profile-service.yaml) (Member 1, Port 8001)
+> - [`contracts/openapi/recipe-service.yaml`](../contracts/openapi/recipe-service.yaml) (Member 2, Port 8002)
+> - [`contracts/openapi/planner-service.yaml`](../contracts/openapi/planner-service.yaml) (Member 3, Port 8003)
+> Complete endpoint documentation, error envelopes, and end-to-end integration workflows are detailed in [`docs/API_CONTRACTS.md`](API_CONTRACTS.md).
 > The representative payload summaries below provide high-level architectural references.
 
 ### 6.1 Service 1: Profile & Nutrition Service (`:8001`)

@@ -1,5 +1,5 @@
 -- ============================================================
--- FoodFlow Database Index Definitions
+-- NutriPod Database Index Definitions
 -- File: 003_indexes.sql
 -- Purpose: Performance indexing, foreign-key lookups, full-text,
 --          trigram fuzzy search, and partial indexes.

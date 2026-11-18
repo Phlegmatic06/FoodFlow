@@ -17,7 +17,7 @@ from ingestion.utils.checksums import (
 class TestChecksums(unittest.TestCase):
 
     def test_compute_bytes_sha256(self):
-        sample = b"FoodFlow streaming ingestion test payload"
+        sample = b"NutriPod streaming ingestion test payload"
         expected = hashlib.sha256(sample).hexdigest().lower()
         actual = compute_bytes_sha256(sample)
         self.assertEqual(actual, expected)

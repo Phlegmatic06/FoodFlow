@@ -373,7 +373,7 @@ class USDAImporter:
                 total_rows=total_imported + total_rejected,
                 imported_rows=total_imported,
                 rejected_rows=total_rejected,
-                notes=f"Ingested via FoodFlow CLI (batch_size={self.batch_size})",
+                notes=f"Ingested via NutriPod CLI (batch_size={self.batch_size})",
             )
 
             # Record in manifest

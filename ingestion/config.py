@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion Framework Configuration
+"""NutriPod Ingestion Framework Configuration
 
 Centralizes filesystem paths, database configuration, dataset metadata,
 batch parameters, and environment variable lookups.
@@ -18,7 +18,7 @@ from urllib.parse import urlparse, urlunparse
 # -----------------------------------------------------------------------------
 def get_project_root() -> Path:
     """Return the repository root directory."""
-    env_root = os.getenv("FOODFLOW_ROOT_DIR")
+    env_root = os.getenv("NUTRIPOD_ROOT_DIR") or os.getenv("FOODFLOW_ROOT_DIR")
     if env_root:
         return Path(env_root).resolve()
     # ingestion/config.py -> ingestion -> root
@@ -36,7 +36,7 @@ REPORTS_DIR: Path = DATA_DIR / "reports"
 MANIFEST_PATH: Path = DATA_DIR / "manifest.json"
 
 # Ingestion configuration defaults
-DEFAULT_BATCH_SIZE: int = int(os.getenv("FOODFLOW_BATCH_SIZE", "1000"))
+DEFAULT_BATCH_SIZE: int = int(os.getenv("NUTRIPOD_BATCH_SIZE") or os.getenv("FOODFLOW_BATCH_SIZE", "1000"))
 CSV_FIELD_SIZE_LIMIT: int = 2147483647  # 2^31 - 1, safe on both 32-bit and 64-bit platforms
 
 
@@ -206,7 +206,7 @@ if _env_file.exists():
 
 def get_database_url() -> Optional[str]:
     """Retrieve database connection URL from environment variables."""
-    return os.getenv("DATABASE_URL") or os.getenv("FOODFLOW_DATABASE_URL")
+    return os.getenv("DATABASE_URL") or os.getenv("NUTRIPOD_DATABASE_URL") or os.getenv("FOODFLOW_DATABASE_URL")
 
 
 def mask_database_url(url: Optional[str]) -> str:

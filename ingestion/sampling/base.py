@@ -1,4 +1,4 @@
-"""FoodFlow Unified Sampling Engine - Base Primitives & Reservoir Samplers
+"""NutriPod Unified Sampling Engine - Base Primitives & Reservoir Samplers
 
 Provides deterministic reservoir sampling, proportional stratum quota allocation
 (Hamilton-Hare largest remainder method with minimum representation), and

@@ -10,7 +10,7 @@ info:
   version: 0.1.0
   contact:
     name: NutriPod Architecture Team
-    url: https://github.com/FoodFlow/foodflow
+    url: https://github.com/NutriPod/nutripod
 
 servers:
   - url: http://localhost:8003

@@ -1,4 +1,4 @@
-"""FoodFlow Unified Sampling Engine - RecipeNLG Stratified Sampler
+"""NutriPod Unified Sampling Engine - RecipeNLG Stratified Sampler
 
 Implements reproducible, stratified reservoir sampling for the RecipeNLG corpus.
 

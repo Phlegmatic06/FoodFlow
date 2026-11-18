@@ -63,7 +63,7 @@ class TestCLI(unittest.TestCase):
             exit_code = main(["doctor"])
         output = captured.getvalue()
         self.assertEqual(exit_code, 0)
-        self.assertIn("FoodFlow Ingestion Environment Doctor", output)
+        self.assertIn("NutriPod Ingestion Environment Doctor", output)
         self.assertIn("Python Version:", output)
         self.assertIn("Data & Report Directories", output)
 
@@ -109,7 +109,7 @@ class TestCLI(unittest.TestCase):
             exit_code = main(["status"])
         output = captured.getvalue()
         self.assertEqual(exit_code, 0)
-        self.assertIn("FoodFlow Dataset Ingestion Framework Status", output)
+        self.assertIn("NutriPod Dataset Ingestion Framework Status", output)
         self.assertIn("usda", output)
         self.assertIn("foodcom", output)
         self.assertIn("recipenlg", output)

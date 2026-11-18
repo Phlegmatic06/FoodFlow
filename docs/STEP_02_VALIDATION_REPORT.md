@@ -100,14 +100,14 @@
 Live validation was performed using the host Docker engine and pre-existing local image:
 - **Docker Engine**: Server version `29.8.1`, API version `1.56`.
 - **Pre-Existing Image**: `postgres:16-alpine` (Image ID `0cefaabd882e`, size 117MB). **No external image downloads occurred.**
-- **Container Isolation**: A unique, disposable container `foodflow-step03a-val-db` was booted with no persistent volume. Host database directory `c:\Code\FoodFlow\database` was mounted **read-only** (`:ro`) to `/database`. Temporary credentials were used and excluded from logs.
+- **Container Isolation**: A unique, disposable container `foodflow-step03a-val-db` was booted with no persistent volume. Host database directory `${PWD}\database` was mounted **read-only** (`:ro`) to `/database`. Temporary credentials were used and excluded from logs.
 - **Existing Container Protection**: Host container `traceend-redis` remained untouched and unaffected throughout the validation.
 
 ### 3.2 Sequential Script Execution Results
 
 ```powershell
 # 1. Start disposable instance
-docker run --name foodflow-step03a-val-db -e POSTGRES_PASSWORD=<redacted> -e POSTGRES_DB=foodflow_db -v "c:\Code\FoodFlow\database:/database:ro" -d postgres:16-alpine
+docker run --name foodflow-step03a-val-db -e POSTGRES_PASSWORD=<redacted> -e POSTGRES_DB=foodflow_db -v "${PWD}\database:/database:ro" -d postgres:16-alpine
 
 # 2. Health check
 docker exec foodflow-step03a-val-db pg_isready -U postgres -d foodflow_db
@@ -374,7 +374,7 @@ docker images
 # Outcome: Confirmed postgres:16-alpine (ID: 0cefaabd882e) already present locally. No download required.
 
 # 2. Start Isolated Disposable Validation Container
-docker run --name foodflow-step03a-val-db -e POSTGRES_PASSWORD=<redacted> -e POSTGRES_DB=foodflow_db -v "c:\Code\FoodFlow\database:/database:ro" -d postgres:16-alpine
+docker run --name foodflow-step03a-val-db -e POSTGRES_PASSWORD=<redacted> -e POSTGRES_DB=foodflow_db -v "${PWD}\database:/database:ro" -d postgres:16-alpine
 # Outcome: Container 3520710c1d85 created with read-only database directory mount.
 
 docker exec foodflow-step03a-val-db pg_isready -U postgres -d foodflow_db

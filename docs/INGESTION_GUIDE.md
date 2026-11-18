@@ -55,7 +55,7 @@ The NutriPod Ingestion Framework is a **reproducible, standalone data engineerin
 ## 2. Directory Structure & Layout
 
 ```
-FoodFlow/
+NutriPod/
 ├── data/
 │   ├── manifest.json              # Structured provenance and audit manifest (tracked in Git)
 │   ├── raw/                       # Raw downloaded archives (gitignored)

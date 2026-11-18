@@ -265,7 +265,7 @@ class FoodComImporter:
                     total_rows=recipe_total,
                     imported_rows=recipe_accepted,
                     rejected_rows=recipe_rejected,
-                    notes=f"Ingested via FoodFlow CLI (batch_size={self.batch_size})",
+                    notes=f"Ingested via NutriPod CLI (batch_size={self.batch_size})",
                 )
 
             # Phase 2: Ingest Ratings / Interactions

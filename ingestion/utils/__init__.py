@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion Utilities Package"""
+"""NutriPod Ingestion Utilities Package"""
 
 from ingestion.utils.checksums import (
     compute_bytes_sha256,

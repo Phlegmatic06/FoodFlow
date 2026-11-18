@@ -1,4 +1,4 @@
-"""FoodFlow Stratified Recipe Sampling Package
+"""NutriPod Stratified Recipe Sampling Package
 
 Provides unified, deterministic, stratified reservoir sampling engines for
 development datasets (Food.com and RecipeNLG).

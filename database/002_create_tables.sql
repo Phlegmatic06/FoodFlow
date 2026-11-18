@@ -1,5 +1,5 @@
 -- ============================================================
--- FoodFlow Database Schema Definitions
+-- NutriPod Database Schema Definitions
 -- File: 002_create_tables.sql
 -- Purpose: Table creation, constraints, and relationships
 -- Execution Order: 2 of 4
@@ -201,7 +201,7 @@ CREATE TABLE recipe_catalog.recipes (
 COMMENT ON TABLE recipe_catalog.recipes IS
     'Unified recipe catalog aggregating Food.com and RecipeNLG datasets under rcp_{dataset}_{id} identifiers.';
 COMMENT ON COLUMN recipe_catalog.recipes.id IS
-    'Prefixed unified ID (e.g. rcp_foodcom_5421, rcp_nlg_108294). Authoritative global identifier across FoodFlow.';
+    'Prefixed unified ID (e.g. rcp_foodcom_5421, rcp_nlg_108294). Authoritative global identifier across NutriPod.';
 COMMENT ON COLUMN recipe_catalog.recipes.servings IS
     'Servings yield. Explicitly NULL for RecipeNLG records where serving yield was not published. No artificial default.';
 COMMENT ON COLUMN recipe_catalog.recipes.tsv_search IS

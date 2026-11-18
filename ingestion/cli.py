@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion Command-Line Interface (CLI)
+"""NutriPod Ingestion Command-Line Interface (CLI)
 
 Provides administrative commands for managing dataset ingestion:
   - doctor:  Comprehensive environment, dependency, and database health audit.
@@ -80,7 +80,7 @@ def _status_badge(passed: bool, label_pass: str = "PASS", label_fail: str = "FAI
 # -----------------------------------------------------------------------------
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Check Python environment, directories, dependencies, and database health."""
-    _header("FoodFlow Ingestion Environment Doctor")
+    _header("NutriPod Ingestion Environment Doctor")
     overall_ok = True
 
     # 1. Python Environment Check
@@ -270,7 +270,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
         print(f"[ERROR] Unknown dataset: '{args.dataset}'. Choose from: usda, foodcom, recipenlg, all", file=sys.stderr)
         return 1
 
-    _header("FoodFlow Dataset File & Checksum Verification")
+    _header("NutriPod Dataset File & Checksum Verification")
     manifest = load_manifest()
     total_files = 0
     verified_files = 0
@@ -346,7 +346,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
 # -----------------------------------------------------------------------------
 def cmd_status(args: argparse.Namespace) -> int:
     """Display overall dataset availability, manifest state, and DB connectivity."""
-    _header("FoodFlow Dataset Ingestion Framework Status")
+    _header("NutriPod Dataset Ingestion Framework Status")
 
     manifest = load_manifest()
     db_url = get_database_url()
@@ -396,7 +396,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 # -----------------------------------------------------------------------------
 def cmd_ingest_usda(args: argparse.Namespace) -> int:
     """Execute USDA FoodData Central ingestion for Foundation Foods or SR Legacy."""
-    _header("FoodFlow USDA FoodData Central Ingestion")
+    _header("NutriPod USDA FoodData Central Ingestion")
     source_path = Path(args.source)
     if not source_path.exists():
         print(f"[ERROR] Specified USDA source path does not exist: {source_path}", file=sys.stderr)
@@ -449,7 +449,7 @@ def cmd_ingest_usda(args: argparse.Namespace) -> int:
 # -----------------------------------------------------------------------------
 def cmd_ingest_foodcom(args: argparse.Namespace) -> int:
     """Ingest Food.com recipes and interaction ratings into recipe_catalog schema."""
-    _header("FoodFlow Food.com Recipe & Interaction Ingestion")
+    _header("NutriPod Food.com Recipe & Interaction Ingestion")
     source_path = Path(args.source).resolve()
     if not source_path.exists():
         print(f"[FAIL] Specified source path does not exist: {source_path}", file=sys.stderr)
@@ -511,7 +511,7 @@ def cmd_ingest_foodcom(args: argparse.Namespace) -> int:
 # -----------------------------------------------------------------------------
 def cmd_ingest_recipenlg(args: argparse.Namespace) -> int:
     """Ingest RecipeNLG recipe corpus into recipe_catalog schema."""
-    _header("FoodFlow RecipeNLG Large Scale Recipe Corpus Ingestion")
+    _header("NutriPod RecipeNLG Large Scale Recipe Corpus Ingestion")
     source_path = Path(args.source).resolve()
     if not source_path.exists():
         print(f"[FAIL] Specified source path does not exist: {source_path}", file=sys.stderr)
@@ -610,7 +610,7 @@ def cmd_seed_ingredient_taxonomy(args: argparse.Namespace) -> int:
     """Validate canonical taxonomy seed, generate reports, and link recipe ingredients."""
     source_dir = Path(args.source).resolve()
     print("=" * 80)
-    print("FoodFlow Canonical Ingredient Taxonomy Seeder & Recipe Linking")
+    print("NutriPod Canonical Ingredient Taxonomy Seeder & Recipe Linking")
     print("=" * 80)
     print(f"Source Audit Directory: {source_dir}")
     print(f"Execution Mode:         {'DRY RUN (simulation only)' if args.dry_run else 'LIVE APPLY (modifies database)'}")
@@ -671,7 +671,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Construct the top-level argument parser for the ingestion CLI."""
     parser = argparse.ArgumentParser(
         prog="python -m ingestion.cli",
-        description="FoodFlow Dataset Ingestion & Seeding Infrastructure CLI (Phase 1, Step 03.5)",
+        description="NutriPod Dataset Ingestion & Seeding Infrastructure CLI (Phase 1, Step 03.5)",
         epilog="Academic non-commercial educational use only. Respects USDA, Food.com, and RecipeNLG licenses.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

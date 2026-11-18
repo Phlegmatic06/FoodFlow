@@ -1,4 +1,4 @@
-"""FoodFlow Dataset Manifest Management
+"""NutriPod Dataset Manifest Management
 
 Maintains a structured, audit-ready manifest of external datasets (USDA, Food.com, RecipeNLG).
 Tracks verified file sizes, SHA-256 hashes, provenance metadata, and ingestion outcomes.

@@ -1,4 +1,4 @@
-"""FoodFlow Ingredient Taxonomy and Canonical Seeding Package."""
+"""NutriPod Ingredient Taxonomy and Canonical Seeding Package."""
 
 from ingestion.taxonomy.definitions import CANONICAL_SEED, CanonicalIngredientSeed
 from ingestion.taxonomy.seeder import TaxonomySeeder

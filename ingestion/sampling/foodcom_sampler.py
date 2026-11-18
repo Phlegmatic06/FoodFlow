@@ -1,4 +1,4 @@
-"""FoodFlow Unified Sampling Engine - Food.com Stratified Sampler
+"""NutriPod Unified Sampling Engine - Food.com Stratified Sampler
 
 Implements reproducible, stratified reservoir sampling for Food.com recipes and
 deterministic referential interaction filtering.

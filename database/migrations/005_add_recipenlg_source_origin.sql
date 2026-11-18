@@ -1,5 +1,5 @@
 -- ============================================================
--- FoodFlow Migration: 005_add_recipenlg_source_origin.sql
+-- NutriPod Migration: 005_add_recipenlg_source_origin.sql
 -- Purpose: Add source_origin column to recipe_catalog.recipes to
 --          track RecipeNLG sub-corpus origin ('Gathered' or 'Recipes1M').
 -- Safety:  Additive migration. Column is NULLable, preserving all

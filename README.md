@@ -99,7 +99,7 @@ NutriPod employs a two-tier deployment architecture:
 
 ### Project Layout
 ```text
-FoodFlow/
+NutriPod/
 ├── compose.yml                     # Multi-service Podman/Docker compose definition
 ├── .env.example                    # Global environment template
 ├── .gitignore                      # Git exclusion rules (raw data excluded, manifest tracked)

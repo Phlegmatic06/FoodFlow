@@ -1,5 +1,5 @@
 -- ============================================================
--- FoodFlow Database Bootstrap
+-- NutriPod Database Bootstrap
 -- File: 001_create_schemas.sql
 -- Purpose: Create extensions, schemas, and database roles
 -- Execution Order: 1 of 4

@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion Checksum Utilities
+"""NutriPod Ingestion Checksum Utilities
 
 Provides memory-bounded streaming SHA-256 calculation and file integrity verification.
 """

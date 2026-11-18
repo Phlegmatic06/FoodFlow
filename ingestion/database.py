@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion Database Connectivity
+"""NutriPod Ingestion Database Connectivity
 
 Provides PostgreSQL 16 connection management using psycopg 3.
 Enforces explicit transaction boundaries, parameterized execution,
@@ -114,7 +114,7 @@ def check_health(database_url: Optional[str] = None) -> DatabaseHealthStatus:
     """Perform a read-only health check against PostgreSQL.
     
     Verifies connection, server version, session identity, and presence of all
-    three required FoodFlow schemas without modifying database state.
+    three required NutriPod schemas without modifying database state.
     """
     url = database_url or get_database_url()
     if not url:
@@ -169,7 +169,7 @@ def check_health(database_url: Optional[str] = None) -> DatabaseHealthStatus:
 
 
 def verify_schemas_exist(database_url: Optional[str] = None) -> Dict[str, bool]:
-    """Verify that all three required FoodFlow schemas exist in the database."""
+    """Verify that all three required NutriPod schemas exist in the database."""
     health = check_health(database_url)
     if not health.is_connected or not health.schemas_found:
         raise DatabaseConnectionError(

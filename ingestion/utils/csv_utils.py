@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion CSV Streaming & Inspection Utilities
+"""NutriPod Ingestion CSV Streaming & Inspection Utilities
 
 Provides memory-bounded streaming CSV iteration, header inspection,
 optional row counting, batch aggregation, and malformed row accounting.

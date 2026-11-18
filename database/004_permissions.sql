@@ -1,5 +1,5 @@
 -- ============================================================
--- FoodFlow Database Access Control & Least-Privilege Grants
+-- NutriPod Database Access Control & Least-Privilege Grants
 -- File: 004_permissions.sql
 -- Purpose: Schema-isolated role permissions, default privileges,
 --          and cross-schema isolation enforcement.

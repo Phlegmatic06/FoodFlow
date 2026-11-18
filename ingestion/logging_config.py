@@ -1,4 +1,4 @@
-"""FoodFlow Ingestion Logging Configuration
+"""NutriPod Ingestion Logging Configuration
 
 Provides structured logging to stdout and persistent audit logs in data/reports/.
 Includes specialized helpers for tracking malformed and rejected records.

@@ -1,4 +1,4 @@
-"""FoodFlow Dataset Importers Package
+"""NutriPod Dataset Importers Package
 
 Contains source-specific parsing and loading pipelines for:
 - usda: USDA FoodData Central (profile_nutrition schema)

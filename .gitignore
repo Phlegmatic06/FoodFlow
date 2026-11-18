@@ -71,7 +71,7 @@ scratch/
 *.tar.gz
 *.bak
 
-# FoodFlow Data Hygiene
+# NutriPod Data Hygiene
 # Keep raw, processed, and report outputs out of version control
 data/raw/**
 !data/raw/

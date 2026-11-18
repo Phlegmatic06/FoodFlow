@@ -1,2 +1,2 @@
-"""FoodFlow Automated Test Suite"""
+"""NutriPod Automated Test Suite"""
 
