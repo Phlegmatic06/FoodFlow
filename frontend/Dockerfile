@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for FoodFlow React Frontend
+# Multi-stage production Dockerfile for NutriPod React Frontend
 FROM node:20-alpine AS builder
 
 WORKDIR /app

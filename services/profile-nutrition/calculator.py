@@ -28,7 +28,7 @@ GOAL_ADJUSTMENTS = {
     "gain": 400,
 }
 
-# Authoritative FoodFlow default macro distribution
+# Authoritative NutriPod default macro distribution
 # Invariant: DEFAULT_PROTEIN_PCT + DEFAULT_CARBS_PCT + DEFAULT_FAT_PCT == 100.0
 DEFAULT_PROTEIN_PCT = 20.0
 DEFAULT_CARBS_PCT = 50.0
@@ -156,11 +156,11 @@ def calculate_biometrics(request: BiometricsCalculationRequest) -> BiometricsCal
     caveats = [
         "BMR calculated using the Mifflin-St Jeor equation (1990).",
         f"TDEE applies physical activity level factor {multiplier} ({activity_label}).",
-        f"Macronutrient target distribution is {int(DEFAULT_PROTEIN_PCT)}% protein, {int(DEFAULT_CARBS_PCT)}% carbohydrates, and {int(DEFAULT_FAT_PCT)}% fat based on FoodFlow default macro distribution.",
+        f"Macronutrient target distribution is {int(DEFAULT_PROTEIN_PCT)}% protein, {int(DEFAULT_CARBS_PCT)}% carbohydrates, and {int(DEFAULT_FAT_PCT)}% fat based on NutriPod default macro distribution.",
     ]
     if request.age_years < 18:
         caveats.append(
-            "Mifflin-St Jeor and adult FoodFlow default macro distribution targets are calibrated for adult populations (18+); "
+            "Mifflin-St Jeor and adult NutriPod default macro distribution targets are calibrated for adult populations (18+); "
             "pediatric metrics should be evaluated with a qualified pediatric health professional."
         )
 

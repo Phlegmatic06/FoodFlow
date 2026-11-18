@@ -34,7 +34,7 @@ def create_app() -> FastAPI:
     """Build and configure the FastAPI application instance."""
     app = FastAPI(
         title=settings.service_title,
-        description="Profile & Nutrition Service for the FoodFlow nutritional planning platform.",
+        description="Profile & Nutrition Service for the NutriPod nutritional planning platform.",
         version=settings.version,
         lifespan=lifespan,
     )

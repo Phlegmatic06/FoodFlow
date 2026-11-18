@@ -1,4 +1,4 @@
-# FoodFlow — RecipeNLG Dataset Integration Guide
+# NutriPod — RecipeNLG Dataset Integration Guide
 
 | Metadata | Details |
 | :--- | :--- |
@@ -14,7 +14,7 @@
 
 ## 1. Dataset Origin & Scholarly Context
 
-FoodFlow utilizes the **RecipeNLG** corpus to expand its culinary catalogue to over 2 million diverse recipes with pre-extracted named entity recognition (NER) ingredient tokens.
+NutriPod utilizes the **RecipeNLG** corpus to expand its culinary catalogue to over 2 million diverse recipes with pre-extracted named entity recognition (NER) ingredient tokens.
 
 ### 1.1 Citation & Attribution
 The dataset was created and published by Michał Bień, Michał Gilski, Martyna Maciejewska, Wojciech Taisner, Dawid Wisniewski, and Agnieszka Ławrynowicz at Poznań University of Technology:
@@ -135,7 +135,7 @@ All tables are deployed strictly within the `recipe_catalog` schema, adhering to
 | `directions` | `instruction` | `TEXT NOT NULL` | Cleaned instruction step text. |
 
 > [!NOTE]
-> **Zero Fabrication Policy**: RecipeNLG does not publish ratings, nutrition information, or categorical tags. FoodFlow **never** fabricates fake ratings, synthetic nutrient values, or diet tags (`recipe_ratings`, `recipe_nutrition_raw`, and `recipe_tags` have **zero** rows inserted for RecipeNLG recipes). Nutritional estimates remain uncalculated until a future USDA ingredient-matching engine can compute them transparently.
+> **Zero Fabrication Policy**: RecipeNLG does not publish ratings, nutrition information, or categorical tags. NutriPod **never** fabricates fake ratings, synthetic nutrient values, or diet tags (`recipe_ratings`, `recipe_nutrition_raw`, and `recipe_tags` have **zero** rows inserted for RecipeNLG recipes). Nutritional estimates remain uncalculated until a future USDA ingredient-matching engine can compute them transparently.
 
 ---
 
@@ -146,7 +146,7 @@ RecipeNLG includes a `source` field identifying whether a recipe was sourced fro
 > [!IMPORTANT]
 > **Source Provenance Derivation**: The `source_origin` field is derived strictly and exclusively from the original `source` column. The importer and sampling engine support verified encodings (`'Gathered'` / `'1'` mapped to `'Gathered'`, and `'Recipes1M'` / `'recipe1m'` / `'0'` mapped to `'Recipes1M'`). Unrecognized, non-standard, or missing values evaluate to `NULL` (or `'Unknown'` in sampling strata). Under no circumstances are recipe IDs used to infer or substitute provenance origin.
 
-Because `source_origin` is distinct from `source_dataset` (`'recipenlg'`), `source_url`, `cuisine`, or `recipe_tags`, FoodFlow provides an additive migration:
+Because `source_origin` is distinct from `source_dataset` (`'recipenlg'`), `source_url`, `cuisine`, or `recipe_tags`, NutriPod provides an additive migration:
 
 ```sql
 -- database/migrations/005_add_recipenlg_source_origin.sql
@@ -206,7 +206,7 @@ With over 2.23 million rows, memory management and transactional throughput are 
 
 ## 7. Command-Line Interface (CLI) Operator Guide
 
-The FoodFlow CLI provides comprehensive administrative tooling for RecipeNLG dataset ingestion.
+The NutriPod CLI provides comprehensive administrative tooling for RecipeNLG dataset ingestion.
 
 ### 7.1 Inspect Raw Files
 ```powershell

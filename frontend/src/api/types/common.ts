@@ -1,5 +1,5 @@
 /**
- * Shared API Types and Error Interfaces conforming to FoodFlow OpenAPI specifications.
+ * Shared API Types and Error Interfaces conforming to NutriPod OpenAPI specifications.
  */
 
 export interface ApiErrorDetail {

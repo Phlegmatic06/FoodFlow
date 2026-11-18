@@ -1,16 +1,16 @@
-# FoodFlow
+# NutriPod
 
 > **An editorial culinary discovery and cooking platform with transparent, health-focused personalization.**
 
-FoodFlow is a university team engineering project designed to deliver a modern, magazine-grade recipe exploration and cooking experience. It bridges large-scale culinary datasets with intelligent pantry matching, step-by-step guided cooking, and an optional, non-intrusive health personalization layer.
+NutriPod is a university team engineering project designed to deliver a modern, magazine-grade recipe exploration and cooking experience. It bridges large-scale culinary datasets with intelligent pantry matching, step-by-step guided cooking, and an optional, non-intrusive health personalization layer.
 
 ---
 
 ## Core Product Philosophy
 
-1. **Guest-First Accessibility**: FoodFlow functions completely and elegantly without an account or personal body measurements. Anyone can browse the catalogue, execute full-text and ingredient searches, apply dietary filters, and follow step-by-step cooking workflows immediately.
+1. **Guest-First Accessibility**: NutriPod functions completely and elegantly without an account or personal body measurements. Anyone can browse the catalogue, execute full-text and ingredient searches, apply dietary filters, and follow step-by-step cooking workflows immediately.
 2. **Optional Health Personalization**: Nutritional targeting, caloric budgeting (BMI, BMR, TDEE), and body-goal alignment are opt-in features. Personal health data is never a barrier to finding good food.
-3. **Scientific Transparency & Zero Fabrication**: Nutritional estimates rely strictly on verified ingredient data from the USDA FoodData Central and Food.com datasets. If nutrient values cannot be reliably computed for a recipe, FoodFlow explicitly indicates them as uncalculated rather than generating synthetic or misleading figures.
+3. **Scientific Transparency & Zero Fabrication**: Nutritional estimates rely strictly on verified ingredient data from the USDA FoodData Central and Food.com datasets. If nutrient values cannot be reliably computed for a recipe, NutriPod explicitly indicates them as uncalculated rather than generating synthetic or misleading figures.
 4. **Editorial Culinary Design**: The interface rejects generic SaaS dashboards, bubbly pill buttons, and glassmorphic gimmicks in favor of a sharp, high-contrast editorial culinary magazine aesthetic with strict 0px border radii and typography-first layouts.
 
 ---
@@ -38,13 +38,13 @@ FoodFlow is a university team engineering project designed to deliver a modern, 
 | **Cloud Provisioning (Ref)** | OpenStack Magnum | Infrastructure reference: provisions the underlying Kubernetes cluster using OpenStack core services. |
 | **Data Ingestion** | Python CLI Pipeline | Isolated batch processors to clean, normalize, and ingest USDA, RecipeNLG, and Food.com datasets. |
 
-*FoodFlow runs entirely self-contained locally via Podman Compose without requiring active OpenStack accounts, remote cloud endpoints, proprietary LLM APIs (e.g., Claude or Gemini), or paid third-party services.*
+*NutriPod runs entirely self-contained locally via Podman Compose without requiring active OpenStack accounts, remote cloud endpoints, proprietary LLM APIs (e.g., Claude or Gemini), or paid third-party services.*
 
 ---
 
 ## Team Structure & Service Ownership
 
-FoodFlow is divided into three distinct, independently maintainable backend microservices alongside shared infrastructure and frontend responsibilities:
+NutriPod is divided into three distinct, independently maintainable backend microservices alongside shared infrastructure and frontend responsibilities:
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -80,7 +80,7 @@ FoodFlow is divided into three distinct, independently maintainable backend micr
 
 ## Visual Design Manifesto
 
-FoodFlow’s visual aesthetic is directly inspired by print culinary periodicals (such as *The Gentlewoman*, *Lucky Peach*, and *Cereal*):
+NutriPod’s visual aesthetic is directly inspired by print culinary periodicals (such as *The Gentlewoman*, *Lucky Peach*, and *Cereal*):
 
 - **Strict Sharp Edges**: `border-radius: 0px` globally. Absolutely zero rounded corners or pill-shaped buttons on cards, dialogs, tags, inputs, or containers.
 - **No Skeuomorphism or Trendy Gimmicks**: Strictly no glassmorphism, blur effects, translucent glass panels, decorative neon glows, or multi-stop gradient backgrounds.
@@ -93,9 +93,9 @@ FoodFlow’s visual aesthetic is directly inspired by print culinary periodicals
 
 ## High-Level Execution & Deployment Direction
 
-FoodFlow employs a two-tier deployment architecture:
+NutriPod employs a two-tier deployment architecture:
 1. **Local Development (Fully Functional & Primary)**: Powered by **Podman and Podman Compose**. This allows the entire team to build, run, test, and demonstrate the full stack locally on any workstation without requiring an OpenStack account, cloud credentials, or external lab connectivity.
-2. **Cloud Production Reference (OpenStack Magnum + Kubernetes)**: For cloud-native deployment, FoodFlow includes production-grade **Kubernetes manifests** (`k8s/`). OpenStack Magnum serves as the infrastructure reference for provisioning the underlying Kubernetes cluster via OpenStack core services (Keystone, Nova, Heat, Neutron, Glance, and Cinder).
+2. **Cloud Production Reference (OpenStack Magnum + Kubernetes)**: For cloud-native deployment, NutriPod includes production-grade **Kubernetes manifests** (`k8s/`). OpenStack Magnum serves as the infrastructure reference for provisioning the underlying Kubernetes cluster via OpenStack core services (Keystone, Nova, Heat, Neutron, Glance, and Cinder).
 
 ### Project Layout
 ```text
@@ -174,7 +174,7 @@ FoodFlow/
 
 ### Key Architectural Note: VM Images (Glance) vs Container Images
 - **Glance VM Disk Images**: In an OpenStack environment, Glance stores base operating system virtual machine disk images (`.qcow2`, `.raw`, e.g., Fedora CoreOS or Ubuntu cloud images) used by Nova and Heat to boot the virtual machines that make up the Kubernetes cluster nodes.
-- **Application Container Images**: FoodFlow application container images (FastAPI microservices and React frontend) are lightweight OCI images built using Podman/Docker (`podman build`) and pushed to an OCI container registry (e.g., Docker Hub, Quay.io, or Harbor). Kubernetes pulls these OCI images to run application Pods on the worker nodes. **Application container images are not stored in Glance.**
+- **Application Container Images**: NutriPod application container images (FastAPI microservices and React frontend) are lightweight OCI images built using Podman/Docker (`podman build`) and pushed to an OCI container registry (e.g., Docker Hub, Quay.io, or Harbor). Kubernetes pulls these OCI images to run application Pods on the worker nodes. **Application container images are not stored in Glance.**
 
 ### Local Workflow (Zero OpenStack Access Required)
 1. **Environment Configuration**: Clone the repository and configure service ports and database credentials via `.env` (copied from `.env.example`).
@@ -237,7 +237,7 @@ FoodFlow/
 7. **Profile & Nutrition Service Endpoints (Port 8001)**:
    - `GET /health` & `GET /health/live`: Service health probes
    - `GET /health/ready`: Database readiness check with `foodflow_profile_user` role
-   - `POST /api/v1/biometrics/calculate`: Stateless calculation of BMI, BMR (Mifflin-St Jeor), TDEE, goal caloric target (maintain: 0, lose: -400, gain: +400 with 1,200 kcal floor), and FoodFlow default macro distribution (20% protein, 50% carbohydrates, 30% fat = 100% total) without DB persistence. When `sex_for_equation` is omitted, returns BMI and category only without fabricating metabolic rates.
+   - `POST /api/v1/biometrics/calculate`: Stateless calculation of BMI, BMR (Mifflin-St Jeor), TDEE, goal caloric target (maintain: 0, lose: -400, gain: +400 with 1,200 kcal floor), and NutriPod default macro distribution (20% protein, 50% carbohydrates, 30% fat = 100% total) without DB persistence. When `sex_for_equation` is omitted, returns BMI and category only without fabricating metabolic rates.
    - `GET /api/v1/nutrition/foods/search`: Paginated search across USDA FoodData Central items with ILIKE / trigram matching and data type filtering
    - `GET /api/v1/nutrition/foods/{fdc_id}`: Complete USDA food nutrient measurements per 100g and household portions
    - `POST /api/v1/nutrition/recipes/estimate`: Ingredient-level nutritional calculation based on USDA tables, returning `calculated` ($\ge 80\%$), `partial` ($>0\%$), or `uncalculated` ($0\%$) status without fabricating missing values

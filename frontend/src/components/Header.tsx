@@ -21,7 +21,7 @@ export const Header: React.FC = () => {
         {/* Brand Masthead */}
         <div className="brand-wrapper">
           <Link to="/" className="brand-logo" onClick={closeMobileMenu}>
-            <span className="brand-title">FoodFlow</span>
+            <span className="brand-title">NutriPod</span>
             <span className="brand-subtitle">Nutritional Planning & Discovery</span>
           </Link>
         </div>

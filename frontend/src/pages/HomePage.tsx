@@ -34,7 +34,7 @@ export const HomePage: React.FC = () => {
             Computational Gastronomy &amp; Nutritional Science
           </h1>
           <p className="hero-lead">
-            FoodFlow connects 50,000 curated culinary recipes with USDA Standard Reference
+            NutriPod connects 50,000 curated culinary recipes with USDA Standard Reference
             Legacy nutrition data, delivering clinically grounded dietary planning and intelligent
             pantry-based meal recommendations.
           </p>

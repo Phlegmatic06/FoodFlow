@@ -1,12 +1,12 @@
-# FoodFlow — Deployment & Container Orchestration Guide
+# NutriPod — Deployment & Container Orchestration Guide
 
-This document specifies the deployment architecture, container orchestration workflows, Kubernetes production configuration, and cloud provisioning strategy for the **FoodFlow** multi-service platform.
+This document specifies the deployment architecture, container orchestration workflows, Kubernetes production configuration, and cloud provisioning strategy for the **NutriPod** multi-service platform.
 
 ---
 
 ## 1. Architectural Overview & Deployment Tiers
 
-FoodFlow operates on a dual-tier deployment model:
+NutriPod operates on a dual-tier deployment model:
 
 ```
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
@@ -190,13 +190,13 @@ kubectl apply -f k8s/ingress/foodflow-ingress.yaml
 
 ### 5.1 OpenStack Core Services Interplay
 
-In an OpenStack cloud environment, the following core services collaborate to provision and manage the infrastructure hosting FoodFlow:
+In an OpenStack cloud environment, the following core services collaborate to provision and manage the infrastructure hosting NutriPod:
 
 ```
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
 |                                    OPENSTACK CORE SERVICES                                       |
 +─────────────┬──────────────────────────┬─────────────────────────────────────────────────────────+
-| SERVICE     | FUNCTIONAL DOMAIN        | ROLE IN FOODFLOW CLUSTER LIFECYCLE                      |
+| SERVICE     | FUNCTIONAL DOMAIN        | ROLE IN NUTRIPOD CLUSTER LIFECYCLE                      |
 +─────────────┼──────────────────────────┼─────────────────────────────────────────────────────────+
 | **Keystone**| Identity & Access        | Authenticates Magnum CLI/API requests; validates tenant |
 |             | Management (IAM)         | credentials; provides service tokens for Heat & Nova.   |
@@ -239,11 +239,11 @@ In an OpenStack cloud environment, the following core services collaborate to pr
 |   cloud-init, and container runtime engine     |   Node.js), libraries, and application code     |
 | • Consumed by: Nova compute hypervisors        | • Consumed by: Container engine (CRI-O / Podman)|
 | • Used to boot K8s master & worker node VMs    | • Used to instantiate application Pods in K8s   |
-| • Infrastructure layer (Managed by Ops/Magnum) | • Application layer (Built by FoodFlow team)    |
+| • Infrastructure layer (Managed by Ops/Magnum) | • Application layer (Built by NutriPod team)    |
 +────────────────────────────────────────────────┴─────────────────────────────────────────────────+
 ```
 
-> **Critical Rule**: FoodFlow application containers are packaged as OCI images via `docker build` / `podman build` and pushed to an OCI registry (e.g., GitHub Container Registry, Harbor, Docker Hub). They are **never** uploaded to OpenStack Glance. Glance is strictly reserved for the operating system images used to boot the cluster node virtual machines.
+> **Critical Rule**: NutriPod application containers are packaged as OCI images via `docker build` / `podman build` and pushed to an OCI registry (e.g., GitHub Container Registry, Harbor, Docker Hub). They are **never** uploaded to OpenStack Glance. Glance is strictly reserved for the operating system images used to boot the cluster node virtual machines.
 
 ### 5.3 Magnum Cluster Provisioning Workflow (Architectural Reference)
 

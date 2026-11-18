@@ -1,4 +1,4 @@
-# FoodFlow — Database Schema & Data Architecture Reference
+# NutriPod — Database Schema & Data Architecture Reference
 
 | Metadata | Details |
 | :--- | :--- |
@@ -13,7 +13,7 @@
 
 ## 1. PostgreSQL 16 Architecture & Schema Isolation
 
-FoodFlow deploys a **single PostgreSQL 16 instance** partitioned into **three strictly isolated schemas**. This topology eliminates the resource overhead of operating three separate database containers on student hardware while enforcing microservice boundary rules:
+NutriPod deploys a **single PostgreSQL 16 instance** partitioned into **three strictly isolated schemas**. This topology eliminates the resource overhead of operating three separate database containers on student hardware while enforcing microservice boundary rules:
 
 ```
                                   +------------------------------------+

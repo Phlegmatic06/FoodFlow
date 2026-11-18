@@ -32,7 +32,7 @@ export const MacroTargetsPanel: React.FC<MacroTargetsPanelProps> = ({
           Target Macronutrient Distribution (AMDR 20 / 50 / 30)
         </h2>
         <p className="section-lead">
-          FoodFlow utilizes the Acceptable Macronutrient Distribution Range (AMDR) calibrated for
+          NutriPod utilizes the Acceptable Macronutrient Distribution Range (AMDR) calibrated for
           sustainable metabolic balance: 20% protein (4 kcal/g), 50% carbohydrates (4 kcal/g), and
           30% dietary fats (9 kcal/g).
         </p>

@@ -27,7 +27,7 @@ describe('App Shell & Navigation Routing', () => {
     expect(skipLink).toHaveAttribute('href', '#main-content');
 
     // Header Brand
-    expect(screen.getByText('FoodFlow')).toBeInTheDocument();
+    expect(screen.getByText('NutriPod')).toBeInTheDocument();
     expect(screen.getByText('Nutritional Planning & Discovery')).toBeInTheDocument();
 
     // Home Hero Heading

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: FoodFlow Recommendation & Meal Planner Service API
+  title: NutriPod Recommendation & Meal Planner Service API
   description: >-
     Member 3 Service (Port 8003). Manages guest session lifecycles, pantry inventories,
     pantry-to-recipe overlap matching, automated meal plan generation, meal plan persistence,
@@ -9,7 +9,7 @@ info:
     All guest operations are authenticated via the X-Guest-Session-ID header.
   version: 0.1.0
   contact:
-    name: FoodFlow Architecture Team
+    name: NutriPod Architecture Team
     url: https://github.com/FoodFlow/foodflow
 
 servers:

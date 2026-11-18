@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for FoodFlow Profile & Nutrition Service (Port 8001)
+# Multi-stage production Dockerfile for NutriPod Profile & Nutrition Service (Port 8001)
 FROM python:3.11-slim AS builder
 
 WORKDIR /build

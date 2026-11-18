@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
-  title: FoodFlow Profile & Nutrition Service API
+  title: NutriPod Profile & Nutrition Service API
   description: >-
     Member 1 Service (Port 8001). Provides health biometrics calculation,
     USDA FoodData Central nutritional lookup, ingredient-based recipe nutrition estimation,
     and cached recipe nutritional profiles. Fully stateless for guest users with no mandatory account creation.
   version: 0.1.0
   contact:
-    name: FoodFlow Architecture Team
+    name: NutriPod Architecture Team
     url: https://github.com/FoodFlow/foodflow
 
 servers:
@@ -104,7 +104,7 @@ paths:
                 caveats:
                   - "BMR calculated using the Mifflin-St Jeor equation (1990)."
                   - "TDEE applies physical activity level factor 1.55 (moderately active)."
-                  - "Macronutrient target distribution is 20% protein, 50% carbohydrates, and 30% fat based on FoodFlow default macro distribution."
+                  - "Macronutrient target distribution is 20% protein, 50% carbohydrates, and 30% fat based on NutriPod default macro distribution."
                 disclaimer: >-
                   These calculated estimates are provided strictly for educational and informational purposes.
                   They do not constitute medical diagnosis, clinical advice, or individualized nutritional prescription.

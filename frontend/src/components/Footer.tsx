@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
         {/* Middle Section: Editorial Context */}
         <div className="footer-editorial-row">
           <div className="footer-col">
-            <h4 className="footer-heading">FoodFlow Architecture</h4>
+            <h4 className="footer-heading">NutriPod Architecture</h4>
             <p className="footer-text">
               An isolated three-tier microservice architecture with dedicated PostgreSQL schemas,
               enforcing strict least-privilege role boundaries and reproducible dataset ingestion.
@@ -53,7 +53,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="footer-bottom-bar">
           <p className="copyright-text">
-            &copy; {new Date().getFullYear()} FoodFlow Platform. Sharp 0px architectural geometry.
+            &copy; {new Date().getFullYear()} NutriPod Platform. Sharp 0px architectural geometry.
           </p>
           <div className="footer-badges">
             <span className="editorial-badge">PostgreSQL 16</span>

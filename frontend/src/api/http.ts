@@ -1,5 +1,5 @@
 /**
- * Core HTTP Client for FoodFlow Frontend
+ * Core HTTP Client for NutriPod Frontend
  * - Generates X-Request-ID for distributed tracing.
  * - Parses standardized API error payloads into typed ApiError objects.
  * - Handles HTTP 204 No Content safely.

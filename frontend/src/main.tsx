@@ -6,7 +6,7 @@ import './styles/global.css';
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
-  throw new Error('Failed to find the root element to mount the FoodFlow React application.');
+  throw new Error('Failed to find the root element to mount the NutriPod React application.');
 }
 
 ReactDOM.createRoot(rootElement).render(

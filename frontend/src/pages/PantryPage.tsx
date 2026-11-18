@@ -194,7 +194,7 @@ export const PantryPage: React.FC = () => {
         <h1 className="page-title">Pantry Inventory &amp; Ingredient Matching</h1>
         <p className="page-lead">
           Manage household ingredients and discover recipes optimized for minimal culinary waste
-          using the FoodFlow canonical ingredient taxonomy.
+          using the NutriPod canonical ingredient taxonomy.
         </p>
       </header>
 

@@ -54,7 +54,7 @@ export const MealPlanNutritionSummary: React.FC<MealPlanNutritionSummaryProps> =
       <div className="disclosure-box" data-testid="nutrition-disclosure-box">
         <span className="editorial-badge disclosure-badge">Nutrition Disclosure</span>
         <p className="disclosure-text">
-          <strong>Macronutrient Distribution Note:</strong> FoodFlow schedules meals around individualized
+          <strong>Macronutrient Distribution Note:</strong> NutriPod schedules meals around individualized
           energy targets and dietary preferences. Exact macronutrient totals (protein, carbohydrates, fat)
           are computed and displayed when complete nutritional data is available from the USDA SR Legacy
           and recipe catalogue. Missing recipe nutrition values are transparently indicated as &ldquo;Unavailable&rdquo;

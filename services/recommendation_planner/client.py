@@ -42,7 +42,7 @@ class RecipeServiceClient:
     def _get_headers(self) -> Dict[str, str]:
         return {
             "Accept": "application/json",
-            "User-Agent": f"FoodFlow-Planner/{settings.version}",
+            "User-Agent": f"NutriPod-Planner/{settings.version}",
         }
 
     def normalize_ingredients(self, ingredients: List[str]) -> Dict[str, Any]:
@@ -180,7 +180,7 @@ class ProfileServiceClient:
     def _get_headers(self) -> Dict[str, str]:
         return {
             "Accept": "application/json",
-            "User-Agent": f"FoodFlow-Planner/{settings.version}",
+            "User-Agent": f"NutriPod-Planner/{settings.version}",
         }
 
     def get_cached_recipe_nutrition(self, recipe_id: str) -> Optional[Dict[str, Any]]:

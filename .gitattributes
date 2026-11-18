@@ -1,0 +1,11 @@
+# Set default behavior to automatically handle line endings
+* text=auto
+
+# Explicitly declare binary files that should never have line endings modified
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.zip binary
+*.dump binary

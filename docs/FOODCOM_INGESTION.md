@@ -1,4 +1,4 @@
-# FoodFlow — Food.com Recipes & Interactions Dataset Integration Guide
+# NutriPod — Food.com Recipes & Interactions Dataset Integration Guide
 
 | Metadata | Details |
 | :--- | :--- |
@@ -13,7 +13,7 @@
 
 ## 1. Dataset Origin & Scholarly Context
 
-FoodFlow utilizes the historical **Food.com Recipes and User Interactions** dataset to populate its recipe catalog, historical review metrics, and instruction search indices.
+NutriPod utilizes the historical **Food.com Recipes and User Interactions** dataset to populate its recipe catalog, historical review metrics, and instruction search indices.
 
 ### 1.1 Citation & Provenance
 The dataset was assembled and published by Bodhisattwa Prasad Majumder, Shuyang Li, Jianmo Ni, and Julian McAuley for research in personalized recipe generation:
@@ -26,7 +26,7 @@ The dataset was assembled and published by Bodhisattwa Prasad Majumder, Shuyang 
 - **Kaggle Distribution**: [https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions)
 
 > [!WARNING]
-> **Licensing & Legal Status**: The BERD platform record does **not** attach an open redistribution license such as CC0 or CC-BY. Ingestion into FoodFlow is conducted strictly for non-commercial academic research and educational evaluation. Commercial deployment or redistribution of raw or derivative recipe text is strictly prohibited. Raw datasets are stored in `data/raw/foodcom/` and excluded from git version control.
+> **Licensing & Legal Status**: The BERD platform record does **not** attach an open redistribution license such as CC0 or CC-BY. Ingestion into NutriPod is conducted strictly for non-commercial academic research and educational evaluation. Commercial deployment or redistribution of raw or derivative recipe text is strictly prohibited. Raw datasets are stored in `data/raw/foodcom/` and excluded from git version control.
 
 ---
 
@@ -125,7 +125,7 @@ All tables are deployed strictly within the `recipe_catalog` schema, adhering to
 #### 5. `recipe_catalog.recipe_nutrition_raw`
 Food.com stores nutritional info as a 7-element array: `[calories, total_fat, sugar, sodium, protein, saturated_fat, carbohydrates]`.
 > [!IMPORTANT]
-> Food.com stores values as **% Daily Value (%DV)** based on a standard 2,000 kcal diet (except calories in kcal). FoodFlow stores these values **verbatim** in `recipe_nutrition_raw` without fabricated gram-weight conversions.
+> Food.com stores values as **% Daily Value (%DV)** based on a standard 2,000 kcal diet (except calories in kcal). NutriPod stores these values **verbatim** in `recipe_nutrition_raw` without fabricated gram-weight conversions.
 
 | Source Array Index | Target Column | Type | Unit / Semantic Meaning |
 | :---: | :--- | :--- | :--- |
@@ -204,7 +204,7 @@ Food.com contains numerous records with sentinel cooking times (e.g. `2147483647
 
 ## 5. Command-Line Interface (CLI) Operator Guide
 
-The FoodFlow CLI provides comprehensive administrative tooling for Food.com dataset ingestion.
+The NutriPod CLI provides comprehensive administrative tooling for Food.com dataset ingestion.
 
 ### 5.1 Inspect Raw Files
 Inspect local raw CSV presence, column headers, and optional line counts:

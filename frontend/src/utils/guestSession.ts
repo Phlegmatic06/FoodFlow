@@ -1,5 +1,5 @@
 /**
- * FoodFlow Guest Session Management
+ * NutriPod Guest Session Management
  * Manages anonymous guest session lifecycle for Recommendation & Meal Planner Service (:8003).
  *
  * Privacy & Security Guarantees:

@@ -1,2 +1,2 @@
-"""FoodFlow microservice test package."""
+"""NutriPod microservice test package."""
 

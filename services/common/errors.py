@@ -90,7 +90,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 def register_error_handlers(app: FastAPI) -> None:
-    """Attach standard FoodFlow exception handlers to a FastAPI application instance."""
+    """Attach standard NutriPod exception handlers to a FastAPI application instance."""
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)

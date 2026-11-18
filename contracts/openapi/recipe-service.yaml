@@ -1,13 +1,13 @@
 openapi: 3.1.0
 info:
-  title: FoodFlow Recipe & Ingredient Service API
+  title: NutriPod Recipe & Ingredient Service API
   description: >-
     Member 2 Service (Port 8002). Manages the unified recipe catalogue (Food.com and RecipeNLG),
     full-text and faceted search, recipe details, ingredient taxonomy and normalization,
     and bulk recipe lookups for internal orchestration. Operates entirely without user registration.
   version: 0.1.0
   contact:
-    name: FoodFlow Architecture Team
+    name: NutriPod Architecture Team
     url: https://github.com/FoodFlow/foodflow
 
 servers:

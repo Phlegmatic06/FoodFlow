@@ -1,5 +1,5 @@
 /**
- * FoodFlow API Service Configuration
+ * NutriPod API Service Configuration
  * Provides base URLs and default timeouts for the three microservices.
  */
 

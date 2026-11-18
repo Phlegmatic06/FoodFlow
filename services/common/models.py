@@ -1,4 +1,4 @@
-"""Common Pydantic data models for FoodFlow backend services."""
+"""Common Pydantic data models for NutriPod backend services."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ class ErrorDetail(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Standard envelope for error responses across all FoodFlow microservices."""
+    """Standard envelope for error responses across all NutriPod microservices."""
 
     error: ErrorDetail
 

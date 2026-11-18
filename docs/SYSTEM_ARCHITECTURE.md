@@ -1,17 +1,17 @@
-# FoodFlow — System Architecture Document
+# NutriPod — System Architecture Document
 
 | Metadata | Details |
 | :--- | :--- |
 | **Document Version** | 1.0.0 |
 | **Status** | Approved Architectural Blueprint (Pre-Implementation) |
-| **Author** | Senior Software Architect / FoodFlow Technical Planning |
+| **Author** | Senior Software Architect / NutriPod Technical Planning |
 | **Runtime Target** | Podman / Docker Engine with Compose Orchestration |
 
 ---
 
 ## 1. Architectural Overview & Design Principles
 
-FoodFlow adopts a **practical, decoupled microservices architecture** composed of three independently maintainable Python/FastAPI backend services, a PostgreSQL relational datastore with strict schema boundaries, and a single-page React frontend.
+NutriPod adopts a **practical, decoupled microservices architecture** composed of three independently maintainable Python/FastAPI backend services, a PostgreSQL relational datastore with strict schema boundaries, and a single-page React frontend.
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -266,9 +266,9 @@ sequenceDiagram
 
 ## 5. Container, Kubernetes & Cloud Deployment Architecture
 
-FoodFlow adopts a dual-tier deployment model:
+NutriPod adopts a dual-tier deployment model:
 1. **Local Development & Assessment Tier (Primary & Fully Functional)**: Standardized on **Podman and Podman Compose**. This allows team members and evaluators to build, run, seed, and test the complete platform locally without any external cloud accounts, remote endpoints, or complex virtualization stacks.
-2. **Cloud Production Reference Tier (OpenStack Magnum + Kubernetes)**: For cloud-native environments, FoodFlow provides declarative **Kubernetes manifests** (`k8s/`). OpenStack Magnum serves as the architectural reference for provisioning the underlying Kubernetes cluster using OpenStack core infrastructure services.
+2. **Cloud Production Reference Tier (OpenStack Magnum + Kubernetes)**: For cloud-native environments, NutriPod provides declarative **Kubernetes manifests** (`k8s/`). OpenStack Magnum serves as the architectural reference for provisioning the underlying Kubernetes cluster using OpenStack core infrastructure services.
 
 ```
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
@@ -328,7 +328,7 @@ FoodFlow adopts a dual-tier deployment model:
 
 ### 5.2 Kubernetes Production Deployment Architecture (`k8s/`)
 
-For deployment to a Kubernetes cluster (such as one provisioned via OpenStack Magnum or any standard conformant Kubernetes distribution), FoodFlow provides a declarative suite of Kubernetes manifests in the `k8s/` directory.
+For deployment to a Kubernetes cluster (such as one provisioned via OpenStack Magnum or any standard conformant Kubernetes distribution), NutriPod provides a declarative suite of Kubernetes manifests in the `k8s/` directory.
 
 ```text
 k8s/
@@ -423,7 +423,7 @@ When OpenStack Magnum provisions and operates a Kubernetes cluster, it orchestra
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
 |                                    OPENSTACK CORE SERVICES MATRIX                                |
 +─────────────┬──────────────────────────┬─────────────────────────────────────────────────────────+
-| SERVICE     | FUNCTIONAL DOMAIN        | EXACT ROLE IN FOODFLOW INFRASTRUCTURE                   |
+| SERVICE     | FUNCTIONAL DOMAIN        | EXACT ROLE IN NUTRIPOD INFRASTRUCTURE                   |
 +─────────────┼──────────────────────────┼─────────────────────────────────────────────────────────+
 | **Keystone**| Identity & Access        | Authenticates Magnum users and services; issues tokens; |
 |             | Management (IAM)         | enforces RBAC policies and provides the service catalog.|
@@ -454,7 +454,7 @@ When OpenStack Magnum provisions and operates a Kubernetes cluster, it orchestra
 
 ### 5.5 Architectural Distinction: Glance VM Images vs. Application Container Images
 
-A critical conceptual distinction in cloud and container architecture is the difference between **virtual machine disk images** managed by OpenStack Glance and **application container images** built for FoodFlow:
+A critical conceptual distinction in cloud and container architecture is the difference between **virtual machine disk images** managed by OpenStack Glance and **application container images** built for NutriPod:
 
 ```
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
@@ -469,12 +469,12 @@ A critical conceptual distinction in cloud and container architecture is the dif
 |   cloud-init, and container runtime engine     |   Node.js), libraries, and application code     |
 | • Consumed by: Nova compute hypervisors        | • Consumed by: Container engine (Podman / CRI-O)|
 | • Used to boot K8s master & worker node VMs    | • Used to instantiate application Pods in K8s   |
-| • Infrastructure layer (Managed by Ops/Magnum) | • Application layer (Built by FoodFlow team)    |
+| • Infrastructure layer (Managed by Ops/Magnum) | • Application layer (Built by NutriPod team)    |
 +────────────────────────────────────────────────┴─────────────────────────────────────────────────+
 ```
 
 > [!IMPORTANT]
-> **Key Architectural Takeaway**: FoodFlow's application containers (FastAPI backends, React frontend) are packaged as OCI images via `podman build` and pulled from an OCI container registry. They are **never** stored directly in OpenStack Glance. Glance is solely responsible for storing the base operating system images (such as Fedora CoreOS or Ubuntu cloud-init) that Nova boots to create the virtual machines hosting Kubernetes.
+> **Key Architectural Takeaway**: NutriPod's application containers (FastAPI backends, React frontend) are packaged as OCI images via `podman build` and pulled from an OCI container registry. They are **never** stored directly in OpenStack Glance. Glance is solely responsible for storing the base operating system images (such as Fedora CoreOS or Ubuntu cloud-init) that Nova boots to create the virtual machines hosting Kubernetes.
 
 ---
 

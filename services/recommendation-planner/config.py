@@ -16,7 +16,7 @@ class PlannerServiceSettings(BaseModel):
     """Runtime configuration for Recommendation & Meal Planner Service."""
 
     service_name: str = "recommendation-planner"
-    service_title: str = "FoodFlow Recommendation & Meal Planner Service"
+    service_title: str = "NutriPod Recommendation & Meal Planner Service"
     version: str = "0.1.0"
     host: str = Field(default_factory=lambda: os.getenv("PLANNER_SERVICE_HOST", os.getenv("HOST", "0.0.0.0")))
     port: int = Field(

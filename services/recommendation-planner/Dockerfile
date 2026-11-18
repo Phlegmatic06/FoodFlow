@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for FoodFlow Recommendation & Meal Planner Service (Port 8003)
+# Multi-stage production Dockerfile for NutriPod Recommendation & Meal Planner Service (Port 8003)
 FROM python:3.11-slim AS builder
 
 WORKDIR /build

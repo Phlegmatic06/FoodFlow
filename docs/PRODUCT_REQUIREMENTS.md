@@ -1,24 +1,24 @@
-# FoodFlow — Product Requirements Document (PRD)
+# NutriPod — Product Requirements Document (PRD)
 
 | Metadata | Details |
 | :--- | :--- |
 | **Document Version** | 1.0.0 |
 | **Status** | Approved Blueprint (Pre-Implementation) |
 | **Target Audience** | Engineering Team (Members 1, 2, 3), Academic Supervisors, Evaluators |
-| **System Identity** | FoodFlow — Editorial Culinary Discovery & Cooking Platform |
+| **System Identity** | NutriPod — Editorial Culinary Discovery & Cooking Platform |
 
 ---
 
 ## 1. Executive Summary & Core Philosophy
 
 ### 1.1 Purpose
-FoodFlow is a comprehensive recipe discovery, pantry matching, and meal planning platform built with transparent, science-backed health personalization. It serves home cooks seeking culinary inspiration, kitchen efficiency, and nutritional clarity.
+NutriPod is a comprehensive recipe discovery, pantry matching, and meal planning platform built with transparent, science-backed health personalization. It serves home cooks seeking culinary inspiration, kitchen efficiency, and nutritional clarity.
 
 ### 1.2 Core Product Philosophy
-FoodFlow is built on the principle of **unconditional utility without forced onboarding**:
+NutriPod is built on the principle of **unconditional utility without forced onboarding**:
 - **First-Class Anonymous Access**: A user must never be forced to register, authenticate, or input personal biological data to discover recipes, perform complex searches, view detailed ingredient breakdowns, or utilize the interactive cooking mode.
 - **Opt-In Personalization**: Health profiles, biometric calculations, and goal-oriented dietary recommendations exist as an optional utility layer. 
-- **Scientific Integrity & Zero Fabrication**: Nutritional facts are derived transparently from authoritative sources (USDA FoodData Central and curated Food.com datasets). If nutritional values cannot be determined for a recipe, FoodFlow explicitly indicates that the data is *uncalculated* rather than generating plausible synthetic numbers.
+- **Scientific Integrity & Zero Fabrication**: Nutritional facts are derived transparently from authoritative sources (USDA FoodData Central and curated Food.com datasets). If nutritional values cannot be determined for a recipe, NutriPod explicitly indicates that the data is *uncalculated* rather than generating plausible synthetic numbers.
 - **Editorial Craftsmanship**: The platform rejects the visual cliches of modern SaaS dashboards (translucent cards, gradients, floating pill buttons, neon accents) in favor of an authoritative, high-contrast culinary publication aesthetic.
 
 ---
@@ -27,7 +27,7 @@ FoodFlow is built on the principle of **unconditional utility without forced onb
 
 ```
 +--------------------------------------------------------------------------------------------------+
-|                                  FOODFLOW USER EXPERIENCE MODES                                  |
+|                                  NUTRIPOD USER EXPERIENCE MODES                                  |
 +--------------------------------------------------------------------------------------------------+
                                                    │
          ┌─────────────────────────────────────────┴─────────────────────────────────────────┐
@@ -53,7 +53,7 @@ FoodFlow is built on the principle of **unconditional utility without forced onb
 ### 2.2 End-to-End User Journeys
 
 #### Journey 1: Guest Culinary Discovery & Cooking Execution
-1. Elena visits FoodFlow. She lands directly on the curated editorial showcase (no modal walls or login banners).
+1. Elena visits NutriPod. She lands directly on the curated editorial showcase (no modal walls or login banners).
 2. She searches for "mushroom risotto", toggling the filter for `< 45 mins` and `Vegetarian`.
 3. The catalog returns paginated results sorted by rating and relevance.
 4. She clicks a recipe card to view the detail page: ingredients with measurements where available in source data, instructions, estimated prep time (if reported), and source-reported or estimated nutrition indicators (with missing values clearly identified as uncalculated).
@@ -122,7 +122,7 @@ The functional requirements are partitioned strictly across the three independen
 | **FR-NUT-04** | **Caloric Target Adjustment** | Support user fitness goals:<br>• Maintenance: $\text{Target} = \text{TDEE}$<br>• Weight Loss: Deficit of $-300\text{ to } -500\text{ kcal/day}$<br>• Weight Gain: Surplus of $+300\text{ to } +500\text{ kcal/day}$ | Display transparent daily caloric budget with balanced macronutrient guideline ranges (Protein 10–35%, Carbs 45–65%, Fat 20–35%). |
 | **FR-NUT-05** | **USDA Ingredient Nutrient Lookups** | Provide internal REST endpoints to look up food items in the USDA FoodData Central database (`profile_nutrition.usda_*` tables) to retrieve verified macro- and micronutrient quantities per 100g. | Queries return per-100g nutrient breakdowns for mapped canonical ingredients. |
 | **FR-NUT-06** | **Nutrition Transparency & Zero Fabrication** | Preserve raw Percentage Daily Values (PDV) from Food.com without presenting them as directly measured grams. If approximate grams are derived, clearly state the reference daily base and label as approximations. For RecipeNLG, nutrition can only be calculated when ingredient quantities, units, and USDA food mappings are sufficiently reliable; if reliable quantities are absent, return `status: "uncalculated"` with nulls. The 80% ingredient mapping threshold is treated as a provisional heuristic rule subject to validation. | Never fabricate missing nutritional values. Never label an estimate as independently "USDA-verified". |
-| **FR-NUT-07** | **Permanent Medical Disclaimer** | Embed a permanent, non-dismissible editorial disclaimer across all health views stating: *"FoodFlow provides nutritional estimates for educational and culinary planning purposes only. It is not medical or dietary advice."* | Disclaimer is visible across all profile, calculation, and meal plan views. |
+| **FR-NUT-07** | **Permanent Medical Disclaimer** | Embed a permanent, non-dismissible editorial disclaimer across all health views stating: *"NutriPod provides nutritional estimates for educational and culinary planning purposes only. It is not medical or dietary advice."* | Disclaimer is visible across all profile, calculation, and meal plan views. |
 
 ---
 
@@ -161,7 +161,7 @@ The functional requirements are partitioned strictly across the three independen
 
 ## 4. Food Photography & Editorial Image Strategy
 
-Because RecipeNLG and Food.com datasets **do not provide an image bundle**, FoodFlow adopts an honest, authentic, and curated photography strategy to avoid false claims or misleading imagery:
+Because RecipeNLG and Food.com datasets **do not provide an image bundle**, NutriPod adopts an honest, authentic, and curated photography strategy to avoid false claims or misleading imagery:
 
 ```
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
@@ -191,7 +191,7 @@ Because RecipeNLG and Food.com datasets **do not provide an image bundle**, Food
 
 ## 5. Visual Design & Typography Specifications
 
-FoodFlow requires an **editorial culinary magazine aesthetic** rather than an interactive software dashboard. It should evoke the tactile authority of an independent food journal.
+NutriPod requires an **editorial culinary magazine aesthetic** rather than an interactive software dashboard. It should evoke the tactile authority of an independent food journal.
 
 ```
 +--------------------------------------------------------------------------------------------------+

@@ -1,4 +1,4 @@
-# FoodFlow — Implementation Roadmap & Delivery Plan
+# NutriPod — Implementation Roadmap & Delivery Plan
 
 | Metadata | Details |
 | :--- | :--- |
@@ -11,7 +11,7 @@
 
 ## 1. Roadmap Strategy & Team Division
 
-To ensure a smooth, risk-controlled workflow for a 3-person student team, FoodFlow adheres to a **Backend-First, Contract-Driven Integration Strategy**:
+To ensure a smooth, risk-controlled workflow for a 3-person student team, NutriPod adheres to a **Backend-First, Contract-Driven Integration Strategy**:
 
 1. **Shared Foundation (Phase 0)**: Establish database schemas, repository structure, environment standards, and API contracts.
 2. **Data Pipeline & Independent Service Builds (Phase 1 & Phase 2)**: Team members develop their respective backend microservices concurrently against shared contracts, using realistic seed data.
@@ -61,7 +61,7 @@ To ensure a smooth, risk-controlled workflow for a 3-person student team, FoodFl
 ### Phase 1: Data Ingestion & Seeding Engine
 - **Objective**: Implement the reproducible data pipeline to ingest USDA, RecipeNLG, and Food.com datasets, supporting both development sampling and full production catalogue scaling.
 - **Catalogue Scope & Broad Coverage Requirements**:
-  - **Broad Cooking Scope**: FoodFlow operates as a comprehensive, general-purpose recipe discovery platform (everyday dinners, regional cuisines, baking, desserts, snacks, beverages), not merely a narrow health recommendation tool.
+  - **Broad Cooking Scope**: NutriPod operates as a comprehensive, general-purpose recipe discovery platform (everyday dinners, regional cuisines, baking, desserts, snacks, beverages), not merely a narrow health recommendation tool.
   - **Development Sampling vs. Full Ingestion**:
     - The initial 25,000 Food.com + 25,000 RecipeNLG development subset is a **temporary seed** designed for rapid local builds ($< 1.2\text{ GB}$ DB footprint, $< 5\text{ min}$ seed time).
     - Development sampling must employ **stratified sampling** preserving diverse categories, tags, cuisines, and ingredient complexities, rather than taking the first $N$ sequential rows.
@@ -202,7 +202,7 @@ To ensure a smooth, risk-controlled workflow for a 3-person student team, FoodFl
   - **Cloud Infrastructure Documentation (OpenStack Magnum Reference)**:
     - Document the provisioning pipeline: how OpenStack Magnum invokes Heat templates to orchestrate Nova VMs, Neutron networking, and Cinder storage into an operational Kubernetes cluster.
     - Document the roles of Keystone (IAM/Auth), Nova (VM Compute), Heat (Orchestration), Neutron (SDN/Routing), Octavia (Dedicated Load Balancing), Glance (VM Disk Images), and Cinder (Block Storage).
-    - Document the strict architectural distinction: **Glance stores base operating system VM disk images (e.g. a supported Fedora CoreOS or Ubuntu cloud image) used by Nova to boot cluster node VMs, whereas FoodFlow application container images are OCI artifacts built with Podman and pulled from an OCI container registry.**
+    - Document the strict architectural distinction: **Glance stores base operating system VM disk images (e.g. a supported Fedora CoreOS or Ubuntu cloud image) used by Nova to boot cluster node VMs, whereas NutriPod application container images are OCI artifacts built with Podman and pulled from an OCI container registry.**
     - Document that while local Podman Compose serves as the active, zero-dependency environment for team development and demonstration, the Kubernetes manifests and Magnum reference provide deployment readiness if a cloud environment is provided for grading.
 - **Milestone Exit Gate**: 
   - Complete stack builds and runs 100% locally via `podman compose up --build`.
@@ -222,7 +222,7 @@ To ensure a smooth, risk-controlled workflow for a 3-person student team, FoodFl
 
 ## 3. University Evaluation Demonstration Scenarios
 
-To demonstrate FoodFlow to course evaluators, the team will present three end-to-end scenarios running on the local Podman Compose environment:
+To demonstrate NutriPod to course evaluators, the team will present three end-to-end scenarios running on the local Podman Compose environment:
 
 ```
 +──────────────────────────────────────────────────────────────────────────────────────────────────+
@@ -262,6 +262,6 @@ To demonstrate FoodFlow to course evaluators, the team will present three end-to
 | **Local Runtime vs. Cloud Infrastructure** | **Podman Compose for local execution** + **Kubernetes manifests (`k8s/`) with OpenStack Magnum documentation**. | Requiring active OpenStack cluster access or installing OpenStack locally on student laptops. | Students have no OpenStack credentials, lab endpoints, or 32GB+ RAM hardware to run DevStack. Podman Compose provides a 100% functional, zero-cost local environment, while K8s manifests provide cloud readiness. |
 | **Database Topology** | Single PostgreSQL instance with 3 isolated schemas (`profile_nutrition`, `recipe_catalog`, `meal_planner`). | 3 separate physical PostgreSQL container instances. | A single instance minimizes RAM consumption on student laptops (avoiding running 3 DB engines) while strictly enforcing logical boundary rules (no cross-schema joins). |
 | **Inter-Service Communication** | Synchronous REST APIs over internal container network. | Asynchronous message queues (Kafka, RabbitMQ). | Event brokers introduce unnecessary operational complexity and failure states for a 3-person team without meaningful throughput benefits. |
-| **Authentication Strategy** | Client-side session / UUID guest token; optional lightweight JWT. | Complex OAuth2 / Social login providers. | FoodFlow prioritizes guest-first accessibility. Heavy authentication walls violate the core philosophy and add fragile external dependencies. |
+| **Authentication Strategy** | Client-side session / UUID guest token; optional lightweight JWT. | Complex OAuth2 / Social login providers. | NutriPod prioritizes guest-first accessibility. Heavy authentication walls violate the core philosophy and add fragile external dependencies. |
 | **Development Data Volume vs. Full Scale** | **50,000 stratified recipe seed** (25k Food.com + 25k RecipeNLG) with complete USDA SR-Legacy dictionary for development; **full-scale ingestion targeting ~2.4M usable records** staged for production/benchmarking. | Immediate ingestion of all 2.4 million recipes during local initial development, or restricting the final application to a tiny hardcoded list. | Stratified sampling allows rapid local builds, fast schema migrations, and quick test execution while maintaining diversity across everyday meals, desserts, and regional cuisines. The identical Python CLI ingestion pipeline processes the full dataset for production scaling. |
 

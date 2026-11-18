@@ -1,12 +1,12 @@
-# FoodFlow — Unified Dataset Sampling & Development Data Preparation Guide
+# NutriPod — Unified Dataset Sampling & Development Data Preparation Guide
 
-This technical guide specifies the architectural design, mathematical formulation, stratification taxonomy, and CLI workflows for the **FoodFlow Unified Sampling Engine** (`ingestion/sampling/`), implemented in **Phase 1 (Step 03.5)**.
+This technical guide specifies the architectural design, mathematical formulation, stratification taxonomy, and CLI workflows for the **NutriPod Unified Sampling Engine** (`ingestion/sampling/`), implemented in **Phase 1 (Step 03.5)**.
 
 ---
 
 ## 1. Why Stratified Sampling is Needed
 
-FoodFlow is designed as a broad, general-purpose culinary and nutrition planning platform. The full upstream dataset distributions represent millions of records:
+NutriPod is designed as a broad, general-purpose culinary and nutrition planning platform. The full upstream dataset distributions represent millions of records:
 - **Food.com Recipes and Interactions**: ~231,637 recipes and ~1.1M community interaction ratings.
 - **RecipeNLG Corpus**: ~2,231,142 recipes (~2.2 GB raw CSV).
 - **USDA FoodData Central (FDC)**: ~8,000 reference foods across Foundation Foods and SR Legacy.
@@ -28,10 +28,10 @@ Stratified sampling solves this by dividing the population into non-overlapping 
 
 ## 2. Why USDA FoodData Central is NOT Randomly Sampled
 
-The USDA dataset (`profile_nutrition` schema) serves as the **foundational nutritional reference dictionary** for FoodFlow:
+The USDA dataset (`profile_nutrition` schema) serves as the **foundational nutritional reference dictionary** for NutriPod:
 - It defines standardized macro- and micronutrients per 100g for base commodity ingredients (flours, milks, cooking oils, vegetables, meats, spices).
 - If base USDA ingredients were randomly subsampled (e.g., keeping only $10\%$ of foods), recipes in `recipe_catalog` referencing everyday staples (such as "onion", "butter", or "salt") would fail ingredient matching, breaking caloric calculation.
-- **Policy**: FoodFlow ingests **100% of USDA Foundation Foods and SR Legacy collections** without subsampling. Because the USDA reference dictionary is relatively compact (~8,000 foods and ~500,000 nutrient records), it easily fits within the $< 1.2 \text{ GB}$ local development budget.
+- **Policy**: NutriPod ingests **100% of USDA Foundation Foods and SR Legacy collections** without subsampling. Because the USDA reference dictionary is relatively compact (~8,000 foods and ~500,000 nutrient records), it easily fits within the $< 1.2 \text{ GB}$ local development budget.
 
 ---
 

@@ -16,7 +16,7 @@ class RecipeServiceSettings(BaseModel):
     """Runtime configuration for Recipe & Ingredient Service."""
 
     service_name: str = "recipe-ingredient"
-    service_title: str = "FoodFlow Recipe & Ingredient Service"
+    service_title: str = "NutriPod Recipe & Ingredient Service"
     version: str = "0.1.0"
     host: str = Field(default_factory=lambda: os.getenv("RECIPE_SERVICE_HOST", os.getenv("HOST", "0.0.0.0")))
     port: int = Field(

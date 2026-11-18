@@ -1,4 +1,4 @@
-# FoodFlow — USDA FoodData Central Dataset Integration Guide
+# NutriPod — USDA FoodData Central Dataset Integration Guide
 
 | Metadata | Details |
 | :--- | :--- |
@@ -13,10 +13,10 @@
 
 ## 1. Official USDA Data Sources & Scope
 
-FoodFlow uses **USDA FoodData Central (FDC)** as the authoritative nutritional composition dictionary to calculate energy (kcal) and macronutrient breakdowns (fat, carbs, protein, fiber, sodium) per 100g for recipe ingredients.
+NutriPod uses **USDA FoodData Central (FDC)** as the authoritative nutritional composition dictionary to calculate energy (kcal) and macronutrient breakdowns (fat, carbs, protein, fiber, sodium) per 100g for recipe ingredients.
 
 ### 1.1 Selected Collections
-FoodFlow specifically ingests two curated USDA collections and deliberately excludes the multi-gigabyte commercial Branded Foods dataset:
+NutriPod specifically ingests two curated USDA collections and deliberately excludes the multi-gigabyte commercial Branded Foods dataset:
 
 1. **Foundation Foods (October 2026 Release)**:
    - **Download URL**: [https://fdc.nal.usda.gov/download-datasets/](https://fdc.nal.usda.gov/download-datasets/)

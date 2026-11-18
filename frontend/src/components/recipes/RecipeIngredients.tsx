@@ -96,7 +96,7 @@ export const RecipeIngredients: React.FC<RecipeIngredientsProps> = ({
                       <span
                         className="editorial-badge canonical-match-badge"
                         data-testid={`canonical-badge-${item.position}`}
-                        title="Mapped to FoodFlow canonical taxonomy"
+                        title="Mapped to NutriPod canonical taxonomy"
                       >
                         Canonical: {item.canonical_name}
                       </span>

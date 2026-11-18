@@ -1,4 +1,4 @@
-"""Comprehensive unit and integration test suite for FoodFlow Recipe & Ingredient Service.
+"""Comprehensive unit and integration test suite for NutriPod Recipe & Ingredient Service.
 
 Verifies:
 - OpenAPI contract conformance and property data types.

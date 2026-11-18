@@ -1,4 +1,4 @@
-# FoodFlow — Dataset Plan & Ingestion Strategy
+# NutriPod — Dataset Plan & Ingestion Strategy
 
 | Metadata | Details |
 | :--- | :--- |
@@ -11,7 +11,7 @@
 
 ## 1. Dataset Matrix & Provenance Overview
 
-FoodFlow integrates three distinct datasets to power recipe exploration, nutrition verification, and pantry matching:
+NutriPod integrates three distinct datasets to power recipe exploration, nutrition verification, and pantry matching:
 
 ```
 +───────────────────────────+ +───────────────────────────+ +───────────────────────────+
@@ -52,7 +52,7 @@ FoodFlow integrates three distinct datasets to power recipe exploration, nutriti
   - `nutrient.csv`: `id`, `name`, `unit_name`, `nutrient_nbr`.
   - `food_nutrient.csv`: `id`, `fdc_id`, `nutrient_id`, `amount` (standardized per 100g).
   - `food_portion.csv`: `fdc_id`, `seq_num`, `amount`, `measure_unit_id`, `gram_weight`.
-- **Contribution to FoodFlow**: Serves as the reference nutritional dictionary. Powers the **Profile and Nutrition Service** (Member 1) to match raw recipe ingredients with macro- and micronutrients per 100g.
+- **Contribution to NutriPod**: Serves as the reference nutritional dictionary. Powers the **Profile and Nutrition Service** (Member 1) to match raw recipe ingredients with macro- and micronutrients per 100g.
 - **Licensing & Legal**: U.S. Government public work; dedicated to the public domain under **CC0 1.0 Universal**. Recommended academic attribution to the USDA Agricultural Research Service.
 - **Ingestion Pipeline Specification**: See [`docs/USDA_INGESTION.md`](USDA_INGESTION.md) for the complete streaming architecture, schema mappings, CLI commands, and integrity rules.
 
@@ -69,9 +69,9 @@ FoodFlow integrates three distinct datasets to power recipe exploration, nutriti
   - `link`: Original web source URL.
   - `source`: Web domain category (e.g., `Gathered`, `Allrecipes`).
   - `NER`: Pre-extracted named entity recognition list of ingredient names (e.g., `["flour", "baking powder"]`).
-- **Contribution to FoodFlow**: Provides a vast, diverse corpus of recipe instructions and titles for the Recipe and Ingredient Service (Member 2). The `NER` column drastically accelerates ingredient tokenization and canonical taxonomy normalization, consumed via REST by the Recommendation and Meal Planner Service (Member 3) for pantry matching.
+- **Contribution to NutriPod**: Provides a vast, diverse corpus of recipe instructions and titles for the Recipe and Ingredient Service (Member 2). The `NER` column drastically accelerates ingredient tokenization and canonical taxonomy normalization, consumed via REST by the Recommendation and Meal Planner Service (Member 3) for pantry matching.
 - **Licensing & Legal Terms**: The official RecipeNLG website requires acceptance of a **non-commercial research and educational usage agreement**. It must not be labeled under a Creative Commons license (such as CC BY-NC-SA 4.0) unless independently verified with the authors.
-  - **Compliance Directive**: FoodFlow is strictly an academic, non-commercial university coursework project. All usage maintains explicit academic attribution and citations to Bień et al. (2020). Raw dataset files are never committed to version control or redistributed.
+  - **Compliance Directive**: NutriPod is strictly an academic, non-commercial university coursework project. All usage maintains explicit academic attribution and citations to Bień et al. (2020). Raw dataset files are never committed to version control or redistributed.
 - **Ingestion Pipeline Specification**: See [`docs/RECIPENLG_INGESTION.md`](RECIPENLG_INGESTION.md) for the streaming parser, conservative quantity parsing, NER canonical linking, and additive migration `005_add_recipenlg_source_origin.sql`.
 
 ### 2.3 Dataset 3: Food.com Recipes and Interactions
@@ -93,16 +93,16 @@ FoodFlow integrates three distinct datasets to power recipe exploration, nutriti
     - `n_ingredients`: Count of ingredients.
   - `RAW_interactions.csv`:
     - `user_id`, `recipe_id`, `date`, `rating` (1–5 scale), `review` (text).
-    - *Row Count Note*: Research literature commonly cites ~1.1M interaction records. The actual row count varies across specific release archives; FoodFlow calculates and logs the exact row count directly from the downloaded file version upon ingestion rather than hardcoding an unverified figure.
-- **Contribution to FoodFlow**: Delivers rich metadata (prep times, difficulty tags, cuisine categories), community quality signals (ratings and reviews), and source-reported %DV nutritional profiles for Member 2 (`recipe_catalog`), consumed via REST by Member 3 (Meal Planner Service) for plan scheduling and Member 1 (Profile & Nutrition Service) for nutrition caching.
-- **Licensing & Legal Terms**: The BERD repository record does not assign a standardized open license. Rights and access conditions require verification before any public distribution. In FoodFlow, this data is used strictly within the bounds of university educational research and evaluation. Original contributor attribution and source IDs are strictly preserved.
+    - *Row Count Note*: Research literature commonly cites ~1.1M interaction records. The actual row count varies across specific release archives; NutriPod calculates and logs the exact row count directly from the downloaded file version upon ingestion rather than hardcoding an unverified figure.
+- **Contribution to NutriPod**: Delivers rich metadata (prep times, difficulty tags, cuisine categories), community quality signals (ratings and reviews), and source-reported %DV nutritional profiles for Member 2 (`recipe_catalog`), consumed via REST by Member 3 (Meal Planner Service) for plan scheduling and Member 1 (Profile & Nutrition Service) for nutrition caching.
+- **Licensing & Legal Terms**: The BERD repository record does not assign a standardized open license. Rights and access conditions require verification before any public distribution. In NutriPod, this data is used strictly within the bounds of university educational research and evaluation. Original contributor attribution and source IDs are strictly preserved.
 - **Ingestion Pipeline Specification**: See [`docs/FOODCOM_INGESTION.md`](FOODCOM_INGESTION.md) for the complete streaming architecture, schema mappings, CLI commands, %DV nutrition array semantics, and incremental ratings aggregation architecture.
 
 ---
 
 ## 3. Data Provenance & Unique Identifier Strategy
 
-To prevent ID collisions across distinct sources, FoodFlow enforces a **synthetic unified primary key** alongside explicit source provenance attributes:
+To prevent ID collisions across distinct sources, NutriPod enforces a **synthetic unified primary key** alongside explicit source provenance attributes:
 
 ```
 +───────────────────────────────────────────────────────────────────────────────────────+
@@ -172,7 +172,7 @@ CREATE INDEX idx_recipes_title_trgm ON recipe_catalog.recipes USING GIN (title g
 1. **Preservation of Raw Percentage Daily Values (PDV)**:
    Food.com stores nutrition as a 7-element array:
    $$\text{nutrition} = [\text{calories (kcal)}, \text{total\_fat (\%DV)}, \text{sugar (\%DV)}, \text{sodium (\%DV)}, \text{protein (\%DV)}, \text{sat\_fat (\%DV)}, \text{carbs (\%DV)}]$$
-   - *Data Integrity Directive*: FoodFlow stores these raw PDV values directly in `recipe_catalog.recipe_nutrition` (`raw_calories`, `raw_total_fat_pdv`, `raw_sugar_pdv`, `raw_sodium_pdv`, `raw_protein_pdv`, `raw_saturated_fat_pdv`, `raw_carbohydrates_pdv`). **PDV percentages must never be presented as directly measured grams.**
+   - *Data Integrity Directive*: NutriPod stores these raw PDV values directly in `recipe_catalog.recipe_nutrition` (`raw_calories`, `raw_total_fat_pdv`, `raw_sugar_pdv`, `raw_sodium_pdv`, `raw_protein_pdv`, `raw_saturated_fat_pdv`, `raw_carbohydrates_pdv`). **PDV percentages must never be presented as directly measured grams.**
    - *Approximation for Gram Display*: When the user interface displays estimated grams for macros, they are calculated based on standard reference daily intake values (FDA 2,000 kcal reference diet: Total Fat 78g, Saturated Fat 20g, Carbohydrates 275g, Protein 50g, Sodium 2,300mg):
      $$\text{approx\_fat\_g} = \frac{\%DV \times 78}{100}, \quad \text{approx\_carbs\_g} = \frac{\%DV \times 275}{100}, \quad \text{approx\_protein\_g} = \frac{\%DV \times 50}{100}$$
    - *Labeling Rule*: All resulting gram values are labeled as *"Approximate Gram Equivalents based on FDA 2,000 kcal Daily Values"* and are explicitly distinguished from chemical laboratory assays or verified measurements.
@@ -228,7 +228,7 @@ CREATE INDEX idx_recipes_title_trgm ON recipe_catalog.recipes USING GIN (title g
 ```
 
 ### 5.1 The Zero-Fabrication & Scientific Integrity Policy
-1. **Never Guess or Fabricate Macronutrients**: Under no circumstances will FoodFlow fabricate missing calories or macronutrients.
+1. **Never Guess or Fabricate Macronutrients**: Under no circumstances will NutriPod fabricate missing calories or macronutrients.
 2. **RecipeNLG Nutrition Constraints**: RecipeNLG provides ingredient text strings and NER tokens, but lacks structured numeric gram weights and units. **Nutrition can only be calculated when ingredient quantities, units, and USDA food mappings are sufficiently reliable.** If reliable quantities cannot be parsed, the system does not attempt caloric calculation, returning `status: 'uncalculated'` with `null` fields.
 3. **Provisional 80% Mapping Heuristic**: The proposed requirement that at least 80% of ingredients be mapped to USDA entries is a **provisional project heuristic rule**, not an established scientific standard. It will be evaluated and tuned during Phase 2 development.
 4. **No "USDA-Verified" Mislabeling**: Derived nutritional values must never be labeled as "USDA-verified". They are strictly labeled as *"Calculated Estimate based on USDA ingredient mapping"*, while Food.com values are labeled as *"Source-Reported % Daily Values"*.
@@ -263,7 +263,7 @@ python -m ingestion.cli ingest-ratings --source data/raw/foodcom/RAW_interaction
 ```
 
 ### 6.3 Development Sampling vs Full Production Scale & Broad Coverage
-- **Broad General-Purpose Coverage**: FoodFlow is architected as a comprehensive, general-purpose culinary and cooking platform, not exclusively a health recipe filter. Search and discovery must support everyday weeknight dinners, comfort foods, regional cuisines (Asian, Latin, Mediterranean, European, etc.), baking, desserts, snacks, and beverages.
+- **Broad General-Purpose Coverage**: NutriPod is architected as a comprehensive, general-purpose culinary and cooking platform, not exclusively a health recipe filter. Search and discovery must support everyday weeknight dinners, comfort foods, regional cuisines (Asian, Latin, Mediterranean, European, etc.), baking, desserts, snacks, and beverages.
 - **Stratified Development Sampling**:
   - The local development target (25,000 Food.com + 25,000 RecipeNLG recipes + full USDA SR-Legacy dictionary) is a **reproducible development seed**.
   - Implemented in Step 03.5 via `ingestion.sampling` (`python -m ingestion.cli sample`).

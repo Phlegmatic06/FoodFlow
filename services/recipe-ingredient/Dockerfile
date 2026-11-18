@@ -1,4 +1,4 @@
-# Multi-stage production Dockerfile for FoodFlow Recipe & Ingredient Service (Port 8002)
+# Multi-stage production Dockerfile for NutriPod Recipe & Ingredient Service (Port 8002)
 FROM python:3.11-slim AS builder
 
 WORKDIR /build

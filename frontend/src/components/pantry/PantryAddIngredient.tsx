@@ -234,7 +234,7 @@ export const PantryAddIngredient: React.FC<PantryAddIngredientProps> = ({
                 No canonical ingredient matching &ldquo;{searchTerm.trim()}&rdquo; was found in the taxonomy.
               </p>
               <span className="taxonomy-hint">
-                FoodFlow uses a curated 106-canonical ingredient vocabulary to preserve culinary fidelity.
+                NutriPod uses a curated 106-canonical ingredient vocabulary to preserve culinary fidelity.
               </span>
             </div>
           )}

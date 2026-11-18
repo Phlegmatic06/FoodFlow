@@ -8,7 +8,7 @@ export const NotFoundPage: React.FC = () => {
         <span className="editorial-badge">HTTP 404</span>
         <h1 className="not-found-title">Page Not Found</h1>
         <p className="not-found-text">
-          The requested culinary route or resource does not exist within the FoodFlow platform catalog.
+          The requested culinary route or resource does not exist within the NutriPod platform catalog.
         </p>
         <div className="not-found-actions">
           <Link to="/" className="btn btn-primary">

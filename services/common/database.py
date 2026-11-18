@@ -1,4 +1,4 @@
-"""Database connection pool management and readiness checking for FoodFlow microservices."""
+"""Database connection pool management and readiness checking for NutriPod microservices."""
 
 from __future__ import annotations
 

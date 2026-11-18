@@ -1,2 +1,2 @@
-"""FoodFlow Core Backend Services Package."""
+"""NutriPod Core Backend Services Package."""
 

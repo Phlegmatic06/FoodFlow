@@ -1,4 +1,4 @@
-# FoodFlow — Dataset Ingestion Framework Guide
+# NutriPod — Dataset Ingestion Framework Guide
 
 | Metadata | Details |
 | :--- | :--- |
@@ -12,7 +12,7 @@
 
 ## 1. Overview & Architecture Boundary
 
-The FoodFlow Ingestion Framework is a **reproducible, standalone data engineering CLI and utility package**. It is designed to stream, validate, sample, and seed three large external research and reference datasets into PostgreSQL 16.
+The NutriPod Ingestion Framework is a **reproducible, standalone data engineering CLI and utility package**. It is designed to stream, validate, sample, and seed three large external research and reference datasets into PostgreSQL 16.
 
 > [!IMPORTANT]
 > **Boundary Rule**: The ingestion pipeline is **infrastructure code**, **NOT** a fourth backend microservice. It does not run as a persistent daemon or expose REST endpoints. It operates as an administrative batch ETL tool executed by developers or CI pipelines before service startup.
@@ -90,7 +90,7 @@ FoodFlow/
 
 ## 3. Python Environment & Setup
 
-FoodFlow supports **Python 3.11+** (verified on host **Python 3.13**). The framework deliberately avoids heavy data libraries like pandas or NumPy, utilizing Python's built-in standard library (`csv`, `hashlib`, `json`, `argparse`, `dataclasses`, `logging`) for bounded memory usage and maximum portability.
+NutriPod supports **Python 3.11+** (verified on host **Python 3.13**). The framework deliberately avoids heavy data libraries like pandas or NumPy, utilizing Python's built-in standard library (`csv`, `hashlib`, `json`, `argparse`, `dataclasses`, `logging`) for bounded memory usage and maximum portability.
 
 ### 3.1 Creating a Virtual Environment
 ```powershell

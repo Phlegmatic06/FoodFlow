@@ -1,4 +1,4 @@
-"""CORS configuration helper for FoodFlow FastAPI services."""
+"""CORS configuration helper for NutriPod FastAPI services."""
 
 from __future__ import annotations
 

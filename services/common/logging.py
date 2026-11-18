@@ -1,4 +1,4 @@
-"""Structured logging setup with credential masking for FoodFlow services."""
+"""Structured logging setup with credential masking for NutriPod services."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ class CredentialMaskingFilter(logging.Filter):
 
 
 def setup_service_logger(service_name: str, level: Optional[str] = None) -> logging.Logger:
-    """Configure and return a structured logger for a FoodFlow service."""
+    """Configure and return a structured logger for a NutriPod service."""
     log_level = (level or os.getenv("LOG_LEVEL", "INFO")).upper()
     logger = logging.getLogger(f"foodflow.{service_name}")
     logger.setLevel(getattr(logging, log_level, logging.INFO))

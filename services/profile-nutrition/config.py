@@ -16,7 +16,7 @@ class ProfileServiceSettings(BaseModel):
     """Runtime configuration for Profile & Nutrition Service."""
 
     service_name: str = "profile-nutrition"
-    service_title: str = "FoodFlow Profile & Nutrition Service"
+    service_title: str = "NutriPod Profile & Nutrition Service"
     version: str = "0.1.0"
     host: str = Field(default_factory=lambda: os.getenv("PROFILE_SERVICE_HOST", os.getenv("HOST", "0.0.0.0")))
     port: int = Field(

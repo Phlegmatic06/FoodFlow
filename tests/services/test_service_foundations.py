@@ -1,4 +1,4 @@
-"""Unit and integration test suite for FoodFlow backend service foundations.
+"""Unit and integration test suite for NutriPod backend service foundations.
 
 Tests verify:
 - Service initialization and default configurations.

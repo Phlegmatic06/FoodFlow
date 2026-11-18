@@ -1,4 +1,4 @@
-# FoodFlow — Inter-Service REST API Contracts & Architecture Handbook
+# NutriPod — Inter-Service REST API Contracts & Architecture Handbook
 
 | Metadata | Details |
 | :--- | :--- |
@@ -12,7 +12,7 @@
 
 ## 1. Global API Standards & Architectural Conventions
 
-All FoodFlow microservices adhere to unified architectural conventions to ensure seamless frontend and inter-service communication across the container network.
+All NutriPod microservices adhere to unified architectural conventions to ensure seamless frontend and inter-service communication across the container network.
 
 ### 1.1 Microservice Registry & Network Topology
 
@@ -89,7 +89,7 @@ $$\text{Format: } \mathbf{rcp\_\{source\_dataset\}\_\{source\_id\}}$$
 ---
 
 ### 1.5 Guest-First Session Lifecycle & `X-Guest-Session-ID`
-FoodFlow enforces an editorial philosophy where recipe discovery, cooking modes, pantry matching, and nutrition calculation require **zero user registration**:
+NutriPod enforces an editorial philosophy where recipe discovery, cooking modes, pantry matching, and nutrition calculation require **zero user registration**:
 - When a guest user wishes to persist an on-hand pantry inventory or save a meal plan, the client initializes a session via `POST /api/v1/guest-sessions`.
 - The service returns a 128-bit UUID (`session_id`) with a 30-day expiry window.
 - The client stores this UUID in local storage and attaches it to subsequent requests via the HTTP header:
@@ -101,7 +101,7 @@ FoodFlow enforces an editorial philosophy where recipe discovery, cooking modes,
 ---
 
 ### 1.6 Nutrition Data Integrity & Status Categories
-FoodFlow prohibits the fabrication of missing nutritional metrics. All nutritional responses include an explicit `status` field:
+NutriPod prohibits the fabrication of missing nutritional metrics. All nutritional responses include an explicit `status` field:
 - `calculated`: Mathematical aggregation from mapped USDA FoodData Central items where ingredient coverage is $\ge 80\%$ and gram weights are reliable.
 - `reported_approximate`: Sourced from Food.com raw percentage Daily Values (`%DV`) with gram conversions calculated based on FDA 2,000 kcal reference intakes and labeled as approximations.
 - `partial`: Nutrient breakdown where coverage is $< 80\%$ or several ingredients lack gram weights.
@@ -326,7 +326,7 @@ Content-Type: application/json
   "caveats": [
     "BMR calculated using the Mifflin-St Jeor equation (1990).",
     "TDEE applies physical activity level factor 1.55 (moderately active).",
-    "Macronutrient target distribution is 20% protein, 50% carbohydrates, and 30% fat based on FoodFlow default macro distribution."
+    "Macronutrient target distribution is 20% protein, 50% carbohydrates, and 30% fat based on NutriPod default macro distribution."
   ],
   "disclaimer": "These calculated estimates are provided strictly for educational and culinary planning purposes. They do not constitute medical diagnosis, clinical advice, or individualized nutritional prescription."
 }

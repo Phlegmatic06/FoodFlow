@@ -434,7 +434,7 @@ export const MealPlannerPage: React.FC = () => {
             No Active Meal Plan
           </h2>
           <p className="empty-desc">
-            You do not currently have a saved meal plan. FoodFlow can automatically synthesize a
+            You do not currently have a saved meal plan. NutriPod can automatically synthesize a
             balanced 1 to 14-day schedule matching your dietary preferences, daily caloric boundary,
             and preparation time limits.
           </p>

@@ -1,4 +1,4 @@
-"""Common configuration utilities and helpers for FoodFlow services."""
+"""Common configuration utilities and helpers for NutriPod services."""
 
 from __future__ import annotations
 

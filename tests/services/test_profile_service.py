@@ -1,4 +1,4 @@
-"""Comprehensive unit and integration test suite for FoodFlow Profile & Nutrition Service.
+"""Comprehensive unit and integration test suite for NutriPod Profile & Nutrition Service.
 
 Verifies:
 - OpenAPI contract conformance and property data types.
